@@ -2,145 +2,36 @@ import React, { useState, useMemo } from 'react';
 import { 
   Calculator, 
   TrendingDown, 
-  Zap, 
-  Layers, 
-  DollarSign, 
   Cpu, 
   Sliders, 
-  FileText, 
-  Code, 
-  MessageSquare, 
-  Database,
   BarChart3,
   CheckCircle2,
   Copy,
-  Info,
-  Sparkles,
   Moon,
   Sun,
-  Filter,
   Search,
-  Mic,
-  Video,
-  Image as ImageIcon,
-  Stethoscope,
-  Building2,
   Award,
   ArrowUpDown,
   Table as TableIcon,
   ChevronLeft,
   ChevronRight,
-  ExternalLink,
   Layers3,
-  RefreshCw,
-  PlusCircle,
   X
 } from 'lucide-react';
 
-// COMPLETE 622 CANONICAL MODEL DATASET (Extracted & Normalized from Workbook)
-const FULL_622_MODELS = [
-  // --- OPENAI (Text / Chat / Reasoning / Audio / Embedding) ---
-  { id: 'openai-gpt-4o', name: 'GPT-4o', provider: 'OpenAI', category: 'Multimodal Chat', inputPrice: 2.50, outputPrice: 10.00, cachedPrice: 1.25, parameters: '~200B (MoE)', domain: 'General Enterprise / Multimodal', useCase: 'Multimodal reasoning, fast voice/text generation, high-throughput enterprise ops', supportsBatch: true, isNew: false, leaderboard: ['text', 'coding'] },
-  { id: 'openai-gpt-4o-mini', name: 'GPT-4o Mini', provider: 'OpenAI', category: 'Multimodal Chat', inputPrice: 0.15, outputPrice: 0.60, cachedPrice: 0.075, parameters: '~8B Active', domain: 'Lightweight NLP & Agent Routing', useCase: 'High-volume text classification, JSON parsing, lightweight chatbots', supportsBatch: true, isNew: false, leaderboard: ['text'] },
-  { id: 'openai-o1', name: 'o1 Reasoning', provider: 'OpenAI', category: 'Text/Chat (Reasoning)', inputPrice: 15.00, outputPrice: 60.00, cachedPrice: 7.50, parameters: 'Proprietary MoE Reasoning', domain: 'Math & Logical Reasoning', useCase: 'Extended chain-of-thought reasoning, math proofs, complex algorithm synthesis', supportsBatch: true, isNew: true, leaderboard: ['text', 'coding'] },
-  { id: 'openai-o3-mini', name: 'o3-mini', provider: 'OpenAI', category: 'Text/Chat (Reasoning)', inputPrice: 1.10, outputPrice: 4.40, cachedPrice: 0.55, parameters: 'Distilled Reasoning MoE', domain: 'STEM & Fast Logic', useCase: 'Sub-second math reasoning, code planning, structural logic validation', supportsBatch: true, isNew: true, leaderboard: ['coding'] },
-  { id: 'openai-gpt-4-turbo', name: 'GPT-4 Turbo', provider: 'OpenAI', category: 'Multimodal Chat', inputPrice: 10.00, outputPrice: 30.00, cachedPrice: 5.00, parameters: 'Proprietary Dense', domain: 'Enterprise Legacy RAG', useCase: 'Legacy enterprise applications, 128k context document extraction', supportsBatch: true, isNew: false, leaderboard: [] },
-  { id: 'openai-gpt-3.5-turbo', name: 'GPT-3.5 Turbo', provider: 'OpenAI', category: 'Text/Chat', inputPrice: 0.50, outputPrice: 1.50, cachedPrice: 0.25, parameters: '20B', domain: 'Legacy Text', useCase: 'Low-cost lightweight chat and prompt execution', supportsBatch: true, isNew: false, leaderboard: [] },
-  { id: 'openai-realtime-api', name: 'GPT-4o Realtime Audio', provider: 'OpenAI', category: 'Speech/Voice', inputPrice: 100.00, outputPrice: 200.00, cachedPrice: 20.00, parameters: 'Direct Speech Pipeline', domain: 'Realtime Speech-to-Speech', useCase: 'Sub-300ms conversational audio bots without separate STT/TTS layers', supportsBatch: false, isNew: true, leaderboard: ['voice'] },
-  { id: 'openai-whisper-large-v3', name: 'Whisper Large v3', provider: 'OpenAI', category: 'Speech/Voice', inputPrice: 0.36, outputPrice: 0.36, cachedPrice: 0.36, parameters: '1.55B', domain: 'Audio Transcription', useCase: 'Multilingual speech recognition and subtitle timestamp alignment', supportsBatch: false, isNew: false, leaderboard: ['voice'] },
+import catalog from './catalog.json';
 
-  // --- ANTHROPIC (Claude 3 / 3.5 / 3.7) ---
-  { id: 'anthropic-claude-3-7-sonnet', name: 'Claude 3.7 Sonnet (Thinking)', provider: 'Anthropic', category: 'Multimodal Chat', inputPrice: 3.00, outputPrice: 15.00, cachedPrice: 0.30, parameters: 'Hybrid Reasoning Architecture', domain: 'Software Engineering & Planning', useCase: 'Hybrid instant or deep thinking reasoning, agentic coding, repository refactoring', supportsBatch: true, isNew: true, leaderboard: ['text', 'coding', 'civil'] },
-  { id: 'anthropic-claude-3-5-sonnet', name: 'Claude 3.5 Sonnet', provider: 'Anthropic', category: 'Multimodal Chat', inputPrice: 3.00, outputPrice: 15.00, cachedPrice: 0.30, parameters: '~175B Hybrid', domain: 'Coding & Analysis', useCase: 'Gold standard for repository coding, legal analysis, document auditing', supportsBatch: true, isNew: false, leaderboard: ['text', 'coding', 'civil'] },
-  { id: 'anthropic-claude-3-5-haiku', name: 'Claude 3.5 Haiku', provider: 'Anthropic', category: 'Multimodal Chat', inputPrice: 0.80, outputPrice: 4.00, cachedPrice: 0.08, parameters: '~20B', domain: 'Fast Agent Execution', useCase: 'Rapid code completion, customer service, structured data extraction', supportsBatch: true, isNew: true, leaderboard: ['text'] },
-  { id: 'anthropic-claude-3-opus', name: 'Claude 3 Opus', provider: 'Anthropic', category: 'Multimodal Chat', inputPrice: 15.00, outputPrice: 75.00, cachedPrice: 1.50, parameters: '~2T Dense/MoE', domain: 'Deep Research', useCase: 'Deep cognitive synthesis, complex policy and financial auditing', supportsBatch: true, isNew: false, leaderboard: ['text'] },
-
-  // --- GOOGLE (Gemini Series) ---
-  { id: 'google-gemini-2-0-flash', name: 'Gemini 2.0 Flash', provider: 'Google', category: 'Multimodal Chat', inputPrice: 0.10, outputPrice: 0.40, cachedPrice: 0.025, parameters: '~30B Active / 120B Total', domain: 'Realtime Audio/Video Agents', useCase: 'Ultra-low latency streaming voice/video dialogue and agent loops', supportsBatch: true, isNew: true, leaderboard: ['voice', 'text'] },
-  { id: 'google-gemini-1-5-pro', name: 'Gemini 1.5 Pro', provider: 'Google', category: 'Multimodal Chat', inputPrice: 1.25, outputPrice: 5.00, cachedPrice: 0.3125, parameters: 'MoE Multimodal', domain: '2M Long Context RAG', useCase: 'Multi-hour video analysis, 2M token context ingestion, codebase indexing', supportsBatch: true, isNew: false, leaderboard: ['text'] },
-  { id: 'google-gemini-1-5-flash', name: 'Gemini 1.5 Flash', provider: 'Google', category: 'Multimodal Chat', inputPrice: 0.075, outputPrice: 0.30, cachedPrice: 0.01875, parameters: 'Distilled Multimodal', domain: 'High-Volume Multimodal', useCase: 'Fast document OCR, video frame summary, web content extraction', supportsBatch: true, isNew: false, leaderboard: [] },
-  { id: 'google-med-palm-2', name: 'Med-PaLM 2 / Med-Gemini', provider: 'Google', category: 'Medical', inputPrice: 5.00, outputPrice: 15.00, cachedPrice: 2.50, parameters: 'Clinical Fine-tuned LLM', domain: 'Clinical Decision Support', useCase: 'USMLE-grade clinical QA, medical journal summarization, EHR note analysis', supportsBatch: true, isNew: false, leaderboard: ['medical'] },
-
-  // --- DEEPSEEK (V3, R1, Coder) ---
-  { id: 'deepseek-v3', name: 'DeepSeek V3', provider: 'DeepSeek', category: 'Text/Chat', inputPrice: 0.14, outputPrice: 0.28, cachedPrice: 0.014, parameters: '671B (37B Active MoE)', domain: 'Open Weights Coding & NLP', useCase: 'High-performance open weights coding, cheap NLP, structured outputs', supportsBatch: false, isNew: true, leaderboard: ['coding'] },
-  { id: 'deepseek-r1', name: 'DeepSeek R1', provider: 'DeepSeek', category: 'Text/Chat (Reasoning)', inputPrice: 0.55, outputPrice: 2.19, cachedPrice: 0.055, parameters: '671B (37B Active MoE)', domain: 'Open Chain-of-Thought Math', useCase: 'Open mathematical reasoning, complex logic decomposition, algorithmic verification', supportsBatch: false, isNew: true, leaderboard: ['coding', 'text'] },
-  { id: 'deepseek-coder-33b', name: 'DeepSeek Coder 33B', provider: 'DeepSeek', category: 'Coding', inputPrice: 0.10, outputPrice: 0.20, cachedPrice: 0.05, parameters: '33B Dense', domain: 'Inline Code Completion', useCase: 'Local IDE code generation and function completion', supportsBatch: false, isNew: false, leaderboard: ['coding'] },
-
-  // --- META (Llama 3.3 / 3.1 / 3.2 Series) ---
-  { id: 'meta-llama-3-3-70b', name: 'Llama 3.3 70B Instruct', provider: 'Meta', category: 'Text/Chat', inputPrice: 0.12, outputPrice: 0.30, cachedPrice: 0.12, parameters: '70B Dense', domain: 'Enterprise Open Source', useCase: 'General enterprise dialogue, local self-hosted agent automation', supportsBatch: false, isNew: false, leaderboard: ['text'] },
-  { id: 'meta-llama-3-1-405b', name: 'Llama 3.1 405B Instruct', provider: 'Meta', category: 'Text/Chat', inputPrice: 1.20, outputPrice: 3.00, cachedPrice: 1.20, parameters: '405B Dense', domain: 'Frontier Open Source', useCase: 'Synthetic dataset creation, model distillation baseline, complex reasoning', supportsBatch: false, isNew: false, leaderboard: [] },
-  { id: 'meta-llama-3-2-90b-vision', name: 'Llama 3.2 90B Vision', provider: 'Meta', category: 'Multimodal Chat', inputPrice: 0.35, outputPrice: 0.70, cachedPrice: 0.35, parameters: '90B Multimodal', domain: 'Open Vision-Language', useCase: 'Image text extraction, visual QA, diagram parsing in self-hosted setups', supportsBatch: false, isNew: true, leaderboard: [] },
-  { id: 'meta-llama-3-2-11b-vision', name: 'Llama 3.2 11B Vision', provider: 'Meta', category: 'Multimodal Chat', inputPrice: 0.05, outputPrice: 0.10, cachedPrice: 0.05, parameters: '11B Multimodal', domain: 'Edge Multimodal', useCase: 'Edge camera parsing, low-resource image tagging', supportsBatch: false, isNew: true, leaderboard: [] },
-
-  // --- ALIBABA (Qwen Series) ---
-  { id: 'alibaba-qwen-2-5-72b', name: 'Qwen 2.5 72B Instruct', provider: 'Alibaba', category: 'Text/Chat', inputPrice: 0.14, outputPrice: 0.28, cachedPrice: 0.14, parameters: '72B Dense', domain: 'Open Multilingual & Math', useCase: 'High-grade open reasoning, multi-language translation, math logic', supportsBatch: false, isNew: false, leaderboard: ['text'] },
-  { id: 'alibaba-qwen-2-5-coder-32b', name: 'Qwen 2.5 Coder 32B', provider: 'Alibaba', category: 'Coding', inputPrice: 0.07, outputPrice: 0.16, cachedPrice: 0.07, parameters: '32B Dense', domain: 'Autonomous Code Synthesis', useCase: 'Coding agent execution, automated unit test generation', supportsBatch: false, isNew: true, leaderboard: ['coding'] },
-  { id: 'alibaba-qwen-3-8-max-prime', name: 'Qwen 3.8 Max Prime', provider: 'Alibaba', category: 'Multimodal Chat', inputPrice: 4.00, outputPrice: 12.00, cachedPrice: 2.00, parameters: 'Proprietary Frontier', domain: 'Multimodal Enterprise Ops', useCase: 'High-fidelity multimodal analysis, legal document extraction', supportsBatch: true, isNew: true, leaderboard: [] },
-
-  // --- MISTRAL AI ---
-  { id: 'mistral-mistral-large-2', name: 'Mistral Large 2', provider: 'Mistral AI', category: 'Text/Chat', inputPrice: 2.00, outputPrice: 6.00, cachedPrice: 1.00, parameters: '123B Dense', domain: 'Multilingual Code & Logic', useCase: 'Enterprise multilingual chat, complex logic synthesis, code auditing', supportsBatch: true, isNew: false, leaderboard: ['text', 'coding'] },
-  { id: 'mistral-codestral-22b', name: 'Codestral 22B', provider: 'Mistral AI', category: 'Coding', inputPrice: 0.20, outputPrice: 0.60, cachedPrice: 0.10, parameters: '22B Dense', domain: 'Fill-in-the-Middle Coding', useCase: 'Inline code autocompletion, fill-in-the-middle software editing', supportsBatch: true, isNew: false, leaderboard: ['coding'] },
-  { id: 'mistral-pixtral-12b', name: 'Pixtral 12B', provider: 'Mistral AI', category: 'Multimodal Chat', inputPrice: 0.15, outputPrice: 0.15, cachedPrice: 0.075, parameters: '12B Vision', domain: 'Multimodal Document Vision', useCase: 'Document diagram parsing, PDF visual ingestion', supportsBatch: true, isNew: true, leaderboard: [] },
-
-  // --- COHERE ---
-  { id: 'cohere-command-r-plus', name: 'Command R+', provider: 'Cohere', category: 'Text/Chat', inputPrice: 2.50, outputPrice: 10.00, cachedPrice: 1.25, parameters: '104B Dense', domain: 'Enterprise Agentic RAG', useCase: 'Multi-step web search retrieval, citation generation, enterprise workflow agents', supportsBatch: true, isNew: false, leaderboard: ['text'] },
-  { id: 'cohere-command-r', name: 'Command R', provider: 'Cohere', category: 'Text/Chat', inputPrice: 0.15, outputPrice: 0.60, cachedPrice: 0.075, parameters: '35B Dense', domain: 'Fast Enterprise RAG', useCase: 'High-throughput RAG search context generation', supportsBatch: true, isNew: false, leaderboard: [] },
-
-  // --- XAI (Grok Series) ---
-  { id: 'xai-grok-2', name: 'Grok 2', provider: 'xAI', category: 'Multimodal Chat', inputPrice: 2.00, outputPrice: 10.00, cachedPrice: 1.00, parameters: 'Proprietary Multimodal', domain: 'Real-time Web Analysis', useCase: 'Live web trend analysis, image generation parsing, coding assistant', supportsBatch: false, isNew: true, leaderboard: ['text'] },
-  { id: 'xai-grok-2-mini', name: 'Grok 2 Mini', provider: 'xAI', category: 'Text/Chat', inputPrice: 0.20, outputPrice: 1.00, cachedPrice: 0.10, parameters: 'Distilled Text', domain: 'Fast Web Reasoning', useCase: 'Sub-second real-time web Q&A and lightweight search extraction', supportsBatch: false, isNew: true, leaderboard: [] },
-
-  // --- SPECIALIZED DOMAIN (Healthcare / Civil Eng / Media) ---
-  { id: 'specialized-bentley-itwin', name: 'Bentley iTwin / Autodesk AI', provider: 'Autodesk & Bentley', category: 'Civil Engineering', inputPrice: 8.00, outputPrice: 24.00, cachedPrice: 4.00, parameters: 'Spatial BIM/CAD Model', domain: 'Civil Infrastructure Audit', useCase: 'Automated 3D BIM model validation, structural stress check, CAD error scan', supportsBatch: false, isNew: true, leaderboard: ['civil'] },
-  { id: 'specialized-rapidclaims', name: 'RapidClaims Medical AI', provider: 'Specialized Healthcare AI', category: 'Medical', inputPrice: 2.50, outputPrice: 8.00, cachedPrice: 1.25, parameters: 'Clinical Billing Agent', domain: 'Medical ICD-10 & EHR Coding', useCase: 'Autonomous CPT/ICD-10 medical coding from physician note logs', supportsBatch: true, isNew: true, leaderboard: ['medical'] },
-
-  // Programmatically generating the full 622 catalog slice across open source variants
-  ...Array.from({ length: 580 }).map((_, i) => {
-    const provs = ['Meta', 'Alibaba', 'Mistral AI', 'AI21', 'Zhipu AI', 'Upstage', 'Abacus AI', 'Volcengine', 'Nvidia', 'Microsoft'];
-    const p = provs[i % provs.length];
-    const categories = ['Text/Chat', 'Multimodal Chat', 'Coding', 'Medical', 'Civil Engineering'];
-    const cat = categories[i % categories.length];
-    const size = [3, 7, 8, 13, 14, 32, 70, 110, 405][i % 9];
-    const inP = Number((0.02 + (i * 0.015) % 4.5).toFixed(3));
-    const outP = Number((inP * (1.5 + (i % 3))).toFixed(3));
-    return {
-      id: `gen-model-${i + 1}`,
-      name: `${p} Model-V${Math.floor(i / 10) + 1} (${size}B)`,
-      provider: p,
-      category: cat,
-      inputPrice: inP,
-      outputPrice: outP,
-      cachedPrice: Number((inP * 0.5).toFixed(3)),
-      parameters: `${size}B ${i % 3 === 0 ? 'MoE' : 'Dense'}`,
-      domain: `${cat} Workflow Automation`,
-      useCase: `High-throughput ${cat.toLowerCase()} inference, structured data execution, domain tasks`,
-      supportsBatch: i % 2 === 0,
-      isNew: i % 7 === 0,
-      leaderboard: cat === 'Coding' ? ['coding'] : cat === 'Medical' ? ['medical'] : cat === 'Civil Engineering' ? ['civil'] : []
-    };
-  })
-];
-
-// SPECIALIZED MEDIA & NON-TOKEN BILLING SHEET
-const MEDIA_NON_TOKEN_MODELS = [
-  { company: 'Black Forest Labs', model: 'FLUX.2 Klein 4B', type: 'Image Generation', rateUnit: '$0.014 / image', domain: 'Design Concepting & Marketing Assets', notes: 'High typography accuracy & prompt execution' },
-  { company: 'Midjourney', model: 'Midjourney v6.1', type: 'Image Generation', rateUnit: '$0.030 / image', domain: 'Artistic Visual Concepting', notes: 'Industry benchmark for photorealism & aesthetics' },
-  { company: 'Runway', model: 'Runway Gen-4.5', type: 'Video Generation', rateUnit: '$0.120 / video sec', domain: 'Cinematic Text-to-Video', notes: 'Camera motion control & temporal consistency' },
-  { company: 'OpenAI', model: 'Sora v1', type: 'Video Generation', rateUnit: '$0.100 / clip render', domain: 'Physical World 3D Simulation', useCase: 'High-fidelity video with 3D spatial coherence' },
-  { company: 'ElevenLabs', model: 'Flash / Turbo v2.5', type: 'Voice / TTS', rateUnit: '$0.050 / 1k chars', domain: 'Conversational Voice Synthesis', notes: 'Ultra-low latency human audio synthesis' },
-  { company: 'ElevenLabs', model: 'Scribe Audio STT', type: 'Speech-to-Text', rateUnit: '$0.220 / audio hr', domain: 'Multi-Speaker Transcription', notes: 'High accuracy diarization & punctuation' },
-  { company: 'OpenAI', model: 'GPT-Live Transcribe', type: 'Live Speech API', rateUnit: '$0.017 / audio min', domain: 'Contact Center Audio Stream', notes: 'Sub-second streaming audio transcription' },
-  { company: 'Mistral AI', model: 'Mistral OCR 4.1', type: 'Document OCR', rateUnit: '$4.000 / 1k pages', domain: 'PDF & Form Ingestion', notes: 'High-density structured table & form OCR' },
-  { company: 'Cohere', model: 'Embed v3 (English/Multilingual)', type: 'Vector Embeddings', rateUnit: '$0.020 / 1M tokens', domain: 'Semantic Search Vector Indexing', notes: 'Dense vector embeddings for RAG retrieval' },
-  { company: 'Cohere', model: 'Rerank v3.5', type: 'Passage Reranking', rateUnit: '$2.000 / 1k searches', domain: 'Precision Context Filtering', notes: 'Boosts top-k relevance prior to LLM generation' }
-];
-
-const PROVIDER_OPTIONS = ['All', 'OpenAI', 'Anthropic', 'Google', 'DeepSeek', 'Meta', 'Alibaba', 'Mistral AI', 'Cohere', 'xAI', 'Autodesk & Bentley', 'Specialized Healthcare AI', 'Open Source / Others'];
+const { models, media, shortlists, masterCount } = catalog;
+const providers = [...new Set(models.map((model) => model.provider))].sort();
+const categories = [...new Set(models.map((model) => model.category))].sort();
+const hasTokenRates = (model) => model.inputPrice !== null && model.outputPrice !== null;
+const comparableModels = models.filter(hasTokenRates);
+const formatPrice = (rate) => rate === null ? '—' : `$${rate.toLocaleString('en-US', { maximumFractionDigits: 10 })}`;
 
 export default function App() {
   // Navigation
   const [activeTab, setActiveTab] = useState('catalog'); // 'catalog', 'roi', 'leaders', 'media'
-  const [activeLeaderCategory, setActiveLeaderCategory] = useState('text');
+  const [activeLeaderCategory, setActiveLeaderCategory] = useState('Best Text');
 
   // Search & Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -157,16 +48,12 @@ export default function App() {
   const [dailyRequests, setDailyRequests] = useState(25000);
   const [inputTokens, setInputTokens] = useState(2000);
   const [outputTokens, setOutputTokens] = useState(500);
-  const [cacheHitRatio, setCacheHitRatio] = useState(50);
-  const [isBatchProcessing, setIsBatchProcessing] = useState(false);
-  const [baselineModelId, setBaselineModelId] = useState('openai-gpt-4o');
+  const [baselineModelId, setBaselineModelId] = useState('openai/gpt-4o');
   const [roiTargetModelIds, setRoiTargetModelIds] = useState([
-    'openai-gpt-4o',
-    'anthropic-claude-3-5-sonnet',
-    'deepseek-v3',
-    'deepseek-r1',
-    'google-gemini-2-0-flash',
-    'meta-llama-3-3-70b'
+    'openai/gpt-4o',
+    'anthropic/claude-sonnet-5-5',
+    'google/gemini-3.5-flash-lite',
+    'openai/gpt-6-astra'
   ]);
 
   // Utility UI
@@ -186,28 +73,20 @@ export default function App() {
 
   // Filter Catalog
   const filteredCatalog = useMemo(() => {
-    return FULL_622_MODELS.filter((m) => {
-      const matchSearch = 
-        m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        m.provider.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        m.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        m.domain.toLowerCase().includes(searchTerm.toLowerCase());
+    const query = searchTerm.trim().toLowerCase();
+    const direction = sortOrder === 'asc' ? 1 : -1;
 
-      const matchProvider = selectedProvider === 'All' || 
-        (selectedProvider === 'Open Source / Others' 
-          ? !['OpenAI', 'Anthropic', 'Google', 'DeepSeek', 'Meta', 'Alibaba', 'Mistral AI', 'Cohere', 'xAI'].includes(m.provider)
-          : m.provider === selectedProvider);
-
-      const matchCategory = selectedCategory === 'All' || m.category === selectedCategory;
-
-      return matchSearch && matchProvider && matchCategory;
-    }).sort((a, b) => {
-      let valA = a[sortField];
-      let valB = b[sortField];
-      if (typeof valA === 'string') {
-        return sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
-      }
-      return sortOrder === 'asc' ? valA - valB : valB - valA;
+    return models.filter((model) => (
+      [model.name, model.provider, model.id, model.domain, model.useCase]
+        .some((value) => value?.toLowerCase().includes(query)) &&
+      (selectedProvider === 'All' || model.provider === selectedProvider) &&
+      (selectedCategory === 'All' || model.category === selectedCategory)
+    )).sort((a, b) => {
+      const left = a[sortField];
+      const right = b[sortField];
+      if (left === null) return right === null ? 0 : 1;
+      if (right === null) return -1;
+      return direction * (typeof left === 'string' ? left.localeCompare(right) : left - right);
     });
   }, [searchTerm, selectedProvider, selectedCategory, sortField, sortOrder]);
 
@@ -222,17 +101,10 @@ export default function App() {
   const roiCalculations = useMemo(() => {
     const totalDailyInput = dailyRequests * inputTokens;
     const totalDailyOutput = dailyRequests * outputTokens;
-    const cachedInput = totalDailyInput * (cacheHitRatio / 100);
-    const standardInput = totalDailyInput * (1 - cacheHitRatio / 100);
-
-    const modelResults = FULL_622_MODELS.filter((m) => roiTargetModelIds.includes(m.id)).map((model) => {
-      const batchDiscount = isBatchProcessing && model.supportsBatch ? 0.5 : 1.0;
-
-      const dailyInputCost = (standardInput / 1_000_000) * model.inputPrice * batchDiscount;
-      const dailyCachedCost = (cachedInput / 1_000_000) * model.cachedPrice * batchDiscount;
-      const dailyOutputCost = (totalDailyOutput / 1_000_000) * model.outputPrice * batchDiscount;
-
-      const dailyTotalCost = dailyInputCost + dailyCachedCost + dailyOutputCost;
+    const modelResults = comparableModels.filter((model) => (
+      model.id === baselineModelId || roiTargetModelIds.includes(model.id)
+    )).map((model) => {
+      const dailyTotalCost = (totalDailyInput * model.inputPrice + totalDailyOutput * model.outputPrice) / 1_000_000;
       const monthlyTotalCost = dailyTotalCost * 30.4375;
       const annualTotalCost = dailyTotalCost * 365;
 
@@ -244,12 +116,12 @@ export default function App() {
       };
     });
 
-    const baseline = modelResults.find((m) => m.id === baselineModelId) || modelResults[0];
-    const baselineMonthly = baseline ? baseline.monthlyTotalCost : 1;
+    const baseline = modelResults.find((m) => m.id === baselineModelId);
+    const baselineMonthly = baseline.monthlyTotalCost;
 
     const processed = modelResults.map((m) => {
       const monthlySavings = baselineMonthly - m.monthlyTotalCost;
-      const annualSavings = monthlySavings * 12;
+      const annualSavings = baseline.annualTotalCost - m.annualTotalCost;
       const savingsPct = baselineMonthly > 0 ? (monthlySavings / baselineMonthly) * 100 : 0;
       return {
         ...m,
@@ -265,32 +137,28 @@ export default function App() {
       results: processed,
       baseline
     };
-  }, [dailyRequests, inputTokens, outputTokens, cacheHitRatio, isBatchProcessing, roiTargetModelIds, baselineModelId]);
+  }, [dailyRequests, inputTokens, outputTokens, roiTargetModelIds, baselineModelId]);
 
   const maxMonthlyRoiCost = Math.max(...roiCalculations.results.map((r) => r.monthlyTotalCost), 1);
 
   // Toggle Model Selection for ROI Comparison
   const toggleModelForRoi = (modelId) => {
-    if (roiTargetModelIds.includes(modelId)) {
-      if (roiTargetModelIds.length > 1) {
-        setRoiTargetModelIds(roiTargetModelIds.filter((id) => id !== modelId));
-      }
-    } else {
-      setRoiTargetModelIds([...roiTargetModelIds, modelId]);
-    }
+    setRoiTargetModelIds((selected) => selected.includes(modelId)
+      ? selected.filter((id) => id !== modelId)
+      : [...selected, modelId]);
   };
 
   // Export Executive Summary to Clipboard / File
   const handleExportSummary = () => {
     const text = `
 ============================================================
-EXECUTIVE AI MODEL ROI & COST COMPARISON REPORT (622 MODELS)
+EXECUTIVE AI MODEL ROI & COST COMPARISON REPORT (${models.length} CATALOG ENTRIES)
 ============================================================
 
 [ WORKLOAD SIMULATION PARAMETERS ]
 Daily Request Volume: ${dailyRequests.toLocaleString()} reqs/day
 Prompt Tokens / Req: ${inputTokens.toLocaleString()} | Response Tokens / Req: ${outputTokens.toLocaleString()}
-Prompt Cache Hit Ratio: ${cacheHitRatio}% | Batch API Discount: ${isBatchProcessing ? 'Active (50%)' : 'Disabled'}
+Workbook snapshot rates before caching, batch discounts, and other fees.
 
 [ BASELINE MODEL BENCHMARK ]
 Baseline Model: ${roiCalculations.baseline?.name || 'N/A'} ($${roiCalculations.baseline?.monthlyTotalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/mo)
@@ -306,7 +174,7 @@ ${roiCalculations.results
   )
   .join('\n\n')}
 
-Total Dataset Size: 622 canonical AI models indexed.
+Catalog: ${masterCount} workbook models plus ${models.length - masterCount} additional hosting IDs.
 `.trim();
 
     navigator.clipboard.writeText(text);
@@ -329,7 +197,7 @@ Total Dataset Size: 622 canonical AI models indexed.
                 AI Models Catalog & ROI Calculator
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-                Complete database indexing 622 AI models with live token cost calculation, provider filtering & specialized domain leaderboards.
+                {masterCount} workbook models plus {models.length - masterCount} additional hosting IDs. Compare workbook prices and estimate token costs.
               </p>
             </div>
           </div>
@@ -363,7 +231,7 @@ Total Dataset Size: 622 canonical AI models indexed.
             }`}
           >
             <TableIcon className="w-4 h-4" />
-            Full Catalog (622 Models)
+            Full Catalog ({models.length} Entries)
           </button>
           
           <button
@@ -403,7 +271,7 @@ Total Dataset Size: 622 canonical AI models indexed.
           </button>
         </div>
 
-        {/* TAB 1: 622 MODEL MASTER DATA TABLE */}
+        {/* TAB 1: MODEL CATALOG */}
         {activeTab === 'catalog' && (
           <div className="space-y-6">
             
@@ -416,7 +284,7 @@ Total Dataset Size: 622 canonical AI models indexed.
                   <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
                   <input
                     type="text"
-                    placeholder="Search 622 models by name, provider, canonical ID, or use case..."
+                    placeholder="Search by model, provider, ID, or use case..."
                     value={searchTerm}
                     onChange={(e) => {
                       setSearchTerm(e.target.value);
@@ -437,42 +305,34 @@ Total Dataset Size: 622 canonical AI models indexed.
                     className="w-full py-2 px-3 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   >
                     <option value="All">All Categories</option>
-                    <option value="Multimodal Chat">Multimodal Chat</option>
-                    <option value="Text/Chat">Text / Chat</option>
-                    <option value="Text/Chat (Reasoning)">Text / Reasoning</option>
-                    <option value="Coding">Coding Specialization</option>
-                    <option value="Medical">Medical AI</option>
-                    <option value="Civil Engineering">Civil Engineering</option>
-                    <option value="Speech/Voice">Speech / Voice</option>
+                    {categories.map((category) => <option key={category}>{category}</option>)}
                   </select>
                 </div>
 
                 {/* Stats counter */}
                 <div className="md:col-span-3 flex items-center justify-end px-3 py-2 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300">
-                  Showing {filteredCatalog.length} of 622 Models
+                  Showing {filteredCatalog.length} of {models.length} Entries
                 </div>
               </div>
 
-              {/* Provider Quick Selector Pills */}
-              <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
-                <span className="text-slate-400 font-semibold mr-2">Provider Filter:</span>
-                {PROVIDER_OPTIONS.map((provider) => (
-                  <button
-                    key={provider}
-                    onClick={() => {
-                      setSelectedProvider(provider);
-                      setCurrentPage(1);
-                    }}
-                    className={`px-3 py-1 rounded-lg font-medium transition ${
-                      selectedProvider === provider
-                        ? 'bg-indigo-600 text-white'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
-                    }`}
-                  >
-                    {provider}
-                  </button>
-                ))}
-              </div>
+              <label className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                Provider
+                <select
+                  value={selectedProvider}
+                  onChange={(event) => {
+                    setSelectedProvider(event.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="max-w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-700 dark:bg-slate-800"
+                >
+                  <option value="All">All Providers</option>
+                  {providers.map((provider) => <option key={provider}>{provider}</option>)}
+                </select>
+              </label>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Workbook snapshot rates. A dash means the workbook has no comparable rate.
+                Workload cost assumes 2,000 input and 500 output tokens per request.
+              </p>
             </div>
 
             {/* Main Data Table */}
@@ -491,7 +351,7 @@ Total Dataset Size: 622 canonical AI models indexed.
                     <th className="py-3 px-3 cursor-pointer hover:text-slate-200" onClick={() => handleSort('outputPrice')}>
                       <div className="flex items-center gap-1">Output / 1M <ArrowUpDown className="w-3 h-3" /></div>
                     </th>
-                    <th className="py-3 px-3">1k Workload Cost*</th>
+                    <th className="py-3 px-3">1k Workload Cost</th>
                     <th className="py-3 px-3">ROI Target</th>
                     <th className="py-3 px-3">Metadata</th>
                   </tr>
@@ -505,9 +365,10 @@ Total Dataset Size: 622 canonical AI models indexed.
                     </tr>
                   ) : (
                     currentPaginatedModels.map((m) => {
-                      const isSelectedForRoi = roiTargetModelIds.includes(m.id);
+                      const isBaseline = m.id === baselineModelId;
+                      const isSelectedForRoi = isBaseline || roiTargetModelIds.includes(m.id);
                       // Benchmark Cost = 1,000 reqs * (2,000 in + 500 out)
-                      const benchmarkCost = ((2000 * 1000) / 1_000_000) * m.inputPrice + ((500 * 1000) / 1_000_000) * m.outputPrice;
+                      const benchmarkCost = hasTokenRates(m) ? 2 * m.inputPrice + 0.5 * m.outputPrice : null;
 
                       return (
                         <tr key={m.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
@@ -528,16 +389,17 @@ Total Dataset Size: 622 canonical AI models indexed.
                             </span>
                           </td>
                           <td className="py-3 px-3 font-mono font-bold text-slate-900 dark:text-slate-100">
-                            ${m.inputPrice.toFixed(3)}
+                            {formatPrice(m.inputPrice)}
                           </td>
                           <td className="py-3 px-3 font-mono font-bold text-slate-900 dark:text-slate-100">
-                            ${m.outputPrice.toFixed(3)}
+                            {formatPrice(m.outputPrice)}
                           </td>
                           <td className="py-3 px-3 font-mono font-bold text-indigo-600 dark:text-indigo-400">
-                            ${benchmarkCost.toFixed(3)}
+                            {formatPrice(benchmarkCost)}
                           </td>
                           <td className="py-3 px-3">
                             <button
+                              disabled={!hasTokenRates(m) || isBaseline}
                               onClick={() => toggleModelForRoi(m.id)}
                               className={`px-2.5 py-1 rounded-lg font-semibold text-[11px] transition ${
                                 isSelectedForRoi
@@ -545,7 +407,7 @@ Total Dataset Size: 622 canonical AI models indexed.
                                   : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700'
                               }`}
                             >
-                              {isSelectedForRoi ? 'Selected' : '+ Select'}
+                              {isBaseline ? 'Baseline' : !hasTokenRates(m) ? 'Rate unavailable' : isSelectedForRoi ? 'Selected' : '+ Select'}
                             </button>
                           </td>
                           <td className="py-3 px-3">
@@ -615,9 +477,9 @@ Total Dataset Size: 622 canonical AI models indexed.
                       onChange={(e) => setBaselineModelId(e.target.value)}
                       className="w-full py-2 px-3 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
-                      {FULL_622_MODELS.map((m) => (
+                      {comparableModels.map((m) => (
                         <option key={m.id} value={m.id}>
-                          {m.name} ({m.provider}) - ${m.inputPrice.toFixed(2)} / ${m.outputPrice.toFixed(2)}
+                          {m.name} ({m.provider}) - {formatPrice(m.inputPrice)} / {formatPrice(m.outputPrice)}
                         </option>
                       ))}
                     </select>
@@ -680,43 +542,10 @@ Total Dataset Size: 622 canonical AI models indexed.
                     />
                   </div>
 
-                  {/* Cache Ratio */}
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between items-center text-xs">
-                      <label className="font-medium text-slate-700 dark:text-slate-300">Prompt Cache Hit Ratio %</label>
-                      <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-200 dark:border-indigo-800">
-                        {cacheHitRatio}%
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      step="5"
-                      value={cacheHitRatio}
-                      onChange={(e) => setCacheHitRatio(Number(e.target.value))}
-                      className="w-full accent-indigo-500 h-2 bg-slate-200 dark:bg-slate-800 rounded-lg cursor-pointer"
-                    />
-                  </div>
-
-                  {/* Batch API Toggle */}
-                  <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
-                    <div className="space-y-0.5">
-                      <div className="text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                        <Layers className="w-3.5 h-3.5 text-indigo-500" />
-                        Batch API Discount (50% Off)
-                      </div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                        Applies to models supporting asynchronous batching
-                      </div>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={isBatchProcessing}
-                      onChange={(e) => setIsBatchProcessing(e.target.checked)}
-                      className="w-4 h-4 accent-indigo-600 cursor-pointer"
-                    />
-                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Estimates use workbook input and output rates before caching, batch discounts, and other fees.
+                    Select comparison models from the Full Catalog.
+                  </p>
 
                 </div>
               </div>
@@ -794,7 +623,7 @@ Total Dataset Size: 622 canonical AI models indexed.
         {activeTab === 'leaders' && (
           <div className="space-y-6">
             <div className="flex flex-wrap gap-2 p-1.5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
-              {['text', 'coding', 'voice', 'medical', 'civil'].map((cat) => (
+              {Object.keys(shortlists).map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setActiveLeaderCategory(cat)}
@@ -802,17 +631,17 @@ Total Dataset Size: 622 canonical AI models indexed.
                     activeLeaderCategory === cat ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
                 >
-                  {cat === 'text' ? 'Best Text' : cat === 'coding' ? 'Best Coding' : cat === 'voice' ? 'Best Voice' : cat === 'medical' ? 'Medical AI' : 'Civil Engineering'}
+                  {cat}
                 </button>
               ))}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {FULL_622_MODELS.filter((m) => m.leaderboard.includes(activeLeaderCategory)).map((m) => (
+              {shortlists[activeLeaderCategory].map((m) => (
                 <div key={m.id} className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="px-2 py-0.5 rounded text-[10px] font-medium border border-indigo-500/20 bg-indigo-500/10 text-indigo-500">
-                      {m.provider}
+                      {m.fit}
                     </span>
                     <span className="text-xs font-mono text-slate-400">{m.parameters}</span>
                   </div>
@@ -826,11 +655,9 @@ Total Dataset Size: 622 canonical AI models indexed.
                     {m.useCase}
                   </p>
 
-                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between font-mono text-xs">
-                    <span className="text-slate-400">Token Rates:</span>
-                    <span className="font-bold text-slate-900 dark:text-slate-100">
-                      ${m.inputPrice.toFixed(2)} In / ${m.outputPrice.toFixed(2)} Out
-                    </span>
+                  <div className="space-y-2 border-t border-slate-100 pt-3 text-xs dark:border-slate-800">
+                    <p>{m.pricing}</p>
+                    <a href={m.source} target="_blank" rel="noreferrer" className="text-indigo-500 hover:underline">Model source</a>
                   </div>
                 </div>
               ))}
@@ -857,14 +684,14 @@ Total Dataset Size: 622 canonical AI models indexed.
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70 text-xs">
-                {MEDIA_NON_TOKEN_MODELS.map((m, idx) => (
+                {media.map((m, idx) => (
                   <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
                     <td className="py-3 px-3 font-semibold text-slate-900 dark:text-slate-100">{m.company}</td>
                     <td className="py-3 px-3 font-bold text-indigo-600 dark:text-indigo-400">{m.model}</td>
                     <td className="py-3 px-3"><span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">{m.type}</span></td>
                     <td className="py-3 px-3 font-mono font-bold text-emerald-600 dark:text-emerald-400">{m.rateUnit}</td>
                     <td className="py-3 px-3 text-slate-600 dark:text-slate-400">{m.domain}</td>
-                    <td className="py-3 px-3 text-slate-500 dark:text-slate-400">{m.notes}</td>
+                    <td className="py-3 px-3 text-slate-500 dark:text-slate-400">{m.notes} <a href={m.source} target="_blank" rel="noreferrer" className="text-indigo-500 hover:underline">Pricing source</a></td>
                   </tr>
                 ))}
               </tbody>
@@ -875,7 +702,7 @@ Total Dataset Size: 622 canonical AI models indexed.
         {/* METADATA MODAL */}
         {selectedModelForModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-6 space-y-4 border border-slate-200 dark:border-slate-800 shadow-2xl">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg max-h-[90vh] overflow-y-auto w-full p-6 space-y-4 border border-slate-200 dark:border-slate-800 shadow-2xl">
               <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
                 <h3 className="font-bold text-slate-900 dark:text-slate-100 text-lg">
                   {selectedModelForModal.name}
@@ -901,34 +728,35 @@ Total Dataset Size: 622 canonical AI models indexed.
                   </div>
                   <div>
                     <span className="text-slate-400 block font-medium">Parameters:</span>
-                    <span className="font-mono text-slate-800 dark:text-slate-200">{selectedModelForModal.parameters}</span>
+                    <span className="font-mono text-slate-800 dark:text-slate-200">{selectedModelForModal.parameters || 'Not listed'}</span>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl font-mono">
                   <div>
                     <span className="text-[10px] text-slate-400 block">Input / 1M</span>
-                    <span className="font-bold text-slate-900 dark:text-slate-100">${selectedModelForModal.inputPrice.toFixed(3)}</span>
+                    <span className="font-bold text-slate-900 dark:text-slate-100">{formatPrice(selectedModelForModal.inputPrice)}</span>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 block">Output / 1M</span>
-                    <span className="font-bold text-slate-900 dark:text-slate-100">${selectedModelForModal.outputPrice.toFixed(3)}</span>
+                    <span className="font-bold text-slate-900 dark:text-slate-100">{formatPrice(selectedModelForModal.outputPrice)}</span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 block">Cached / 1M</span>
-                    <span className="font-bold text-slate-900 dark:text-slate-100">${selectedModelForModal.cachedPrice.toFixed(3)}</span>
+                    <span className="text-[10px] text-slate-400 block">Rate basis</span>
+                    <span>{selectedModelForModal.basis}</span>
                   </div>
                 </div>
 
                 <div>
                   <span className="text-slate-400 block font-medium">Use Case & Domain Capabilities:</span>
                   <p className="text-slate-600 dark:text-slate-300 leading-relaxed mt-1">
-                    {selectedModelForModal.useCase}
+                    {selectedModelForModal.useCase} {selectedModelForModal.domain}
                   </p>
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <a href={selectedModelForModal.source} target="_blank" rel="noreferrer" className="text-xs text-indigo-500 hover:underline">Pricing or model source</a>
                 <button
                   onClick={() => setSelectedModelForModal(null)}
                   className="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 text-white"
