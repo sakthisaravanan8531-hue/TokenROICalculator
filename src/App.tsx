@@ -49,6 +49,15 @@ export default function App() {
   const [inputTokens, setInputTokens] = useState(2000);
   const [outputTokens, setOutputTokens] = useState(500);
   const [baselineModelId, setBaselineModelId] = useState('openai/gpt-4o');
+  const [baselineSearch, setBaselineSearch] = useState('');
+  const baselineQuery = baselineSearch.trim().toLowerCase();
+  const matchingBaselines = comparableModels.filter((model) =>
+    [model.name, model.provider, model.id].some((value) => value.toLowerCase().includes(baselineQuery))
+  );
+  const baselineOptions = matchingBaselines.some((model) => model.id === baselineModelId)
+    ? matchingBaselines
+    : [comparableModels.find((model) => model.id === baselineModelId), ...matchingBaselines];
+
   const [roiTargetModelIds, setRoiTargetModelIds] = useState([
     'openai/gpt-4o',
     'anthropic/claude-sonnet-5-5',
@@ -469,15 +478,26 @@ Catalog: ${masterCount} workbook models plus ${models.length - masterCount} addi
 
                   {/* Baseline Model Selector */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    <label htmlFor="roi-baseline" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                       Baseline Model Benchmark
                     </label>
-                    <select
+                    <input
+                      type="search"
+                      aria-label="Search baseline models"
+                      placeholder="Search baseline models by name, provider, or ID"
+                      value={baselineSearch}
+                      onChange={(event) => setBaselineSearch(event.target.value)}
+                      className="w-full py-2 px-3 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                    />
+                    {baselineQuery && <p className="text-xs text-slate-500 dark:text-slate-400" aria-live="polite">
+                      {matchingBaselines.length ? `${matchingBaselines.length} matching models` : 'No matching models. The current baseline is still selected.'}
+                    </p>}
+                    <select id="roi-baseline"
                       value={baselineModelId}
                       onChange={(e) => setBaselineModelId(e.target.value)}
                       className="w-full py-2 px-3 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
-                      {comparableModels.map((m) => (
+                      {baselineOptions.map((m) => (
                         <option key={m.id} value={m.id}>
                           {m.name} ({m.provider}) - {formatPrice(m.inputPrice)} / {formatPrice(m.outputPrice)}
                         </option>
