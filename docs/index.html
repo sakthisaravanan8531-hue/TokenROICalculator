@@ -1,14 +1,195 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Compare AI model costs and estimate workload savings." />
-    <title>Token ROI Calculator</title>
-    <script type="module" crossorigin src="./assets/index-C0EXMw0K.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-CHsmgx36.css">
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Compare AI model pricing, estimate token costs and evaluate potential savings for your workload.">
+<title>AI Model Catalog &amp; Token ROI Calculator</title>
+<script type="module" src="https://pyscript.net/releases/2025.11.1/core.js"></script>
+<style>
+:root{color-scheme:dark;--bg:#050918;--panel:#11182a;--field:#1b2639;--line:#23304a;--ink:#f5f7ff;--muted:#a0b6d1;--accent:#5036ef;--link:#a99cff;font:14px/1.5 system-ui,sans-serif}
+:root[data-theme=light]{color-scheme:light;--bg:#f3f5fb;--panel:#fff;--field:#eff2f9;--line:#d1dbec;--ink:#162037;--muted:#465a78;--link:#4330c5}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink)} main{max-width:1280px;margin:auto;padding:28px 24px 54px}
+header{display:flex;align-items:center;gap:12px;padding-bottom:24px;border-bottom:1px solid var(--line)} .brand{display:grid;place-items:center;background:var(--accent);color:white;border-radius:16px;width:48px;height:48px;flex:none;font-size:24px}
+h1{font-size:clamp(1.3rem,3vw,1.9rem);line-height:1.18;margin:0 0 3px;font-weight:800} h2{font-size:1.08rem;margin:0 0 12px} p{margin:0 0 8px;color:var(--muted)}
+header p{margin:0;font-size:.93rem}.header-actions{margin-left:auto;display:flex;gap:10px;flex:none}
+nav{display:flex;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--line);padding:24px 0 8px;margin-bottom:24px}
+section{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:22px}
+.leader-modes{margin-bottom:12px}.leader-modes button[aria-pressed=true]{background:var(--accent);color:#fff;border-color:var(--accent)}.job-table td{white-space:normal;min-width:130px;vertical-align:top}.job-table td:nth-child(3),.job-table td:nth-child(4){min-width:220px}
+.resource-list{margin:0;padding-left:1.2em}.resource-list li+li{margin-top:6px}
+#detail-card h3{font-size:.95rem;margin:10px 0 5px} #detail-id{overflow-wrap:anywhere}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}.split{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,310px),1fr));gap:14px}
+.filters{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(140px,1fr) auto;gap:12px;align-items:center}.filters input,.filters select{margin:0}
+#new-only[aria-pressed=true]{background:var(--accent);color:white;border-color:var(--accent)}
+@media(max-width:850px){.filters{grid-template-columns:repeat(2,minmax(0,1fr))}.filters #full-query{grid-column:1/-1}}
+.filters + small{display:block;margin-top:14px}
+label{display:block;font-size:.86rem;color:var(--muted)} input,select,button,a.action{font:inherit}
+input,select{width:100%;padding:.58rem .7rem;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:10px;margin:4px 0 8px}
+button,a.action{display:inline-block;border:1px solid var(--line);border-radius:11px;padding:.62rem .9rem;background:var(--panel);color:var(--muted);font-weight:650;text-decoration:none;cursor:pointer}
+button.primary,a.primary,nav button[aria-pressed=true]{background:var(--accent);color:#fff;border-color:var(--accent)} button:disabled{opacity:.6;cursor:default} button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #9b8cff;outline-offset:2px}
+.actions,.pager{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.pager{justify-content:space-between;margin-top:12px}.status{margin:8px 0 0;min-height:1.5em}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;white-space:nowrap;font-size:.86rem}
+.results-table :is(th,td):not(:first-child){text-align:right}.results-table tbody tr:nth-child(odd){background:var(--field)}.results-table th{background:var(--field)}
+th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line)} th{color:var(--muted);font-weight:650} th button,td .link{padding:0;background:none;border:0;font-size:inherit} td .link,a{color:var(--link)}
+#catalog-rows td:first-child{font-weight:700}.tag{padding:3px 7px;background:var(--field);color:var(--muted);border-radius:5px;font-size:.78rem}.new{margin-left:7px;color:#ffb84a}
+.scroll{overflow-x:auto} small{color:var(--muted)} [hidden]{display:none!important}
+@media(max-width:650px){main{padding:18px 12px}header{flex-wrap:wrap}.header-actions{margin-left:0}.filters{grid-template-columns:1fr}section{padding:14px}}
+#leader-price-table{max-height:28rem;overflow:auto}#leader-price-table thead{position:sticky;top:0;background:var(--panel)}
+.comparison-option{border-top:1px solid var(--line);padding-top:12px;margin-top:16px}
+.comparison-option summary{cursor:pointer;font-weight:650;margin-bottom:10px}
+.comparison-option summary:focus-visible{outline:2px solid #9b8cff;outline-offset:3px}
+.advisor-search{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end}.advisor-search input{margin-bottom:0}
+.advisor-question{border:0;border-top:1px solid var(--line);padding:14px 0 0;margin:16px 0 0;min-width:0}
+.advisor-result{background:var(--field);border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:10px;overflow-wrap:anywhere}
+.advisor-result h4{margin:0 0 5px}.advisor-result p{margin-bottom:6px}
+@media(max-width:480px){.advisor-search{grid-template-columns:1fr}.advisor-search button{justify-self:start}}
+.catalog-price{white-space:normal;min-width:150px;max-width:260px}
+</style>
+<link rel="stylesheet" href="./dashboard.css">
+</head>
+<body>
+<main>
+<header><span class="brand" aria-hidden="true">ROI</span><div><h1>AI Model Catalog &amp; Token ROI Calculator</h1><p>Compare AI model pricing and estimate workload costs. Catalog snapshot: 11 November 2026.</p></div>
+<div class="header-actions" id="header-actions" hidden><button type="button" py-click="toggle_theme" aria-label="Toggle color theme">☀</button><a id="export-report" class="action primary" download="token-roi-comparison.csv">Download cost report</a></div></header>
+<p id="loading" role="status">Loading calculator…</p>
+<fieldset id="app" disabled hidden style="border:0;padding:0;margin:0;min-width:0">
+<nav aria-label="Calculator sections">
+<button type="button" id="tab-full" aria-pressed="false" py-click="show_panel">▦ &nbsp;Full Catalog (<span id="catalog-total"></span> Entries)</button>
+<button type="button" id="tab-roi" aria-pressed="true" py-click="show_panel">▤ &nbsp;Token ROI Calculator</button>
+<button type="button" id="tab-details" aria-pressed="false" py-click="show_panel">▱ &nbsp;Model Details</button>
+</nav>
+<div id="panel-full" hidden>
+<section>
+<div class="filters"><input id="full-query" type="search" aria-label="Search catalog" placeholder="Search by model, provider, ID, or use case…" py-input="filter_full">
+<select id="category" aria-label="Category" py-change="filter_full"></select>
+<select id="provider" aria-label="Provider" py-change="filter_full"></select>
+<button type="button" id="new-only" aria-pressed="false" py-click="toggle_new_only">New models</button></div>
+<small>Rates come from the workbook snapshot and documented additions. The token estimate assumes 2,000 input and 500 output tokens per request. Other billing units are shown as published.</small>
+</section>
+<section><div class="scroll"><table><thead><tr>
+<th><button id="sort-name" type="button" py-click="sort_full">Model Name ↕</button></th><th>Provider</th><th>Category</th>
+<th><button id="sort-inputPrice" type="button" py-click="sort_full">Input / 1M ↕</button></th><th><button id="sort-outputPrice" type="button" py-click="sort_full">Output / 1M ↕</button></th>
+<th>Cost per 1,000 requests / other billing</th><th>Compare</th><th>Details</th>
+</tr></thead><tbody id="catalog-rows" py-click="catalog_action"></tbody></table></div>
+<div class="pager"><span id="page-label"></span><div class="actions"><button type="button" id="previous" py-click="change_page">Previous</button><button type="button" id="next" py-click="change_page">Next</button></div></div></section>
+</div>
+<div id="panel-roi">
+<div class="setup">
+<section><h2>Workload</h2><div class="grid">
+<label>Requests per day<input id="requests" type="number" min="0" step="1" value="25000"></label>
+<label>Input tokens per request<input id="prompt" type="number" min="0" step="1" value="2000"></label>
+<label>Output tokens per request<input id="completion" type="number" min="0" step="1" value="500"></label>
+<label>Days per month<input id="days" type="number" min="1" max="31" step="1" value="30"></label>
+</div><small>Estimates use base token rates in USD and 365 days per year.</small></section>
+<section aria-labelledby="comparison-title"><h2 id="comparison-title">Cost comparison</h2>
+<div class="grid">
+<label>Baseline model<select id="baseline" py-change="calculate"></select></label>
+<label>Add a comparison model<select id="comparison-model" py-change="add_comparison_model"></select></label>
+</div>
+<div class="actions"><button type="button" class="primary" py-click="calculate">Calculate costs</button></div>
+<p id="status" class="status" aria-live="polite"></p>
+<details class="comparison-option">
+<summary>Custom pricing</summary>
+<div class="grid"><label>Model name<input id="custom-name" maxlength="120"></label>
+<label>Input USD per 1M tokens<input id="custom-input" type="number" min="0" step="any"></label>
+<label>Output USD per 1M tokens<input id="custom-output" type="number" min="0" step="any"></label></div>
+<button type="button" py-click="add_custom">Add custom model</button>
+</details>
+</section>
+</div>
+<section aria-labelledby="results-title">
+<div class="results-head"><div><h2 id="results-title">Cost results</h2><p>Estimated spend in USD</p></div><a id="csv" class="action" download="token-roi-comparison.csv" hidden>Export CSV</a></div>
+<div id="cost-overview" hidden>
+<dl class="metrics">
+<div class="metric"><dt>Baseline monthly cost</dt><dd id="metric-baseline"></dd><small id="metric-baseline-name"></small></div>
+<div class="metric"><dt>Lowest monthly cost</dt><dd id="metric-lowest"></dd><small id="metric-lowest-name"></small></div>
+<div class="metric savings"><dt>Potential annual savings</dt><dd id="metric-savings"></dd><small id="metric-savings-detail"></small></div>
+</dl>
+<div class="cost-chart"><h3 id="cost-chart-title">Monthly cost by model</h3><ul id="cost-chart-rows" class="chart-list" aria-labelledby="cost-chart-title"></ul></div>
+</div>
+<p id="cost-empty" hidden>Enter a valid workload and select models to see results.</p>
+<div class="scroll"><table class="results-table" aria-label="Model cost comparison results"><thead><tr><th>Model</th><th>USD / day</th><th>USD / month</th><th>USD / year</th><th>Annual savings</th><th>Savings %</th><th scope="col">Actions</th></tr></thead><tbody id="results" py-click="remove_model"></tbody></table></div>
+</section>
+<section aria-labelledby="leader-title">
+<h2 id="leader-title">Domain Leaders</h2>
+<div class="leader-controls">
+<div class="actions leader-modes" role="group" aria-label="Compare models by">
+<button type="button" id="leader-price" aria-pressed="true" py-click="switch_leader_mode">Best price</button>
+<button type="button" id="leader-fit" aria-pressed="false" py-click="switch_leader_mode">Best for the job</button>
+</div>
+<label>Category<select id="leader-category" py-change="render_leaders"></select></label>
+</div>
+<div id="leader-price-panel">
+<p>Selected comparison models ranked by estimated monthly cost for your workload.</p>
+<p id="leader-price-empty" role="status" hidden>No calculated comparison models in this category.</p>
+<div id="leader-price-table" class="scroll"><table><thead><tr><th>Rank</th><th>Model</th><th>Provider</th><th>Input / 1M</th><th>Output / 1M</th><th>USD / month</th><th>Source</th></tr></thead><tbody id="leader-rows"></tbody></table></div>
+</div>
+<div id="leader-fit-panel" hidden>
+<p>Use cases and best-fit domains for your selected comparison models. Workbook shortlist recommendations appear first where available.</p>
+<p id="leader-fit-empty" role="status" hidden>No calculated comparison models in this category.</p>
+<div id="leader-fit-table" class="scroll"><table class="job-table"><thead><tr><th>Model</th><th>Best fit</th><th>Use case</th><th>Best-fit domains</th><th>Source</th></tr></thead><tbody id="leader-job-rows"></tbody></table></div>
+</div>
+</section>
+<section aria-labelledby="advisor-title">
+<h2 id="advisor-title">Find models for a use case</h2>
+<form py-submit="recognize_use_case">
+<div class="advisor-search">
+<label>Describe your use case<input id="advisor-query" type="search" required maxlength="500" placeholder="e.g. Read invoice totals from scanned PDFs" py-input="reset_advisor"></label>
+<button type="submit" class="primary">Find models</button>
+</div>
+</form>
+<p id="advisor-status" class="status" role="status" hidden></p>
+<form id="advisor-requirements" py-submit="recommend_models" hidden>
+<fieldset class="advisor-question">
+<legend>Tell us what the model needs to do</legend>
+<label><span id="advisor-detail-caption">More about your requirement (optional)</span>
+<input id="advisor-detail" type="text" maxlength="500" placeholder="e.g. Rerank legal passages before generating an answer" py-input="configure_advisor"></label>
+<div class="grid">
+<label>Required output<select id="advisor-task" required py-change="configure_advisor"></select></label>
+<label id="advisor-video-mode-label" hidden>Are you editing existing footage or generating new clips?
+<select id="advisor-video-mode" py-change="configure_advisor"><option value="">Choose one</option><option value="edit">Edit existing footage</option><option value="generate">Generate new clips</option></select></label>
+<label id="advisor-followup-label" hidden><span id="advisor-followup-caption"></span>
+<input id="advisor-followup" type="text" maxlength="250" py-input="clear_advisor_results"></label>
+<label id="advisor-edit-goal-label" hidden>What do you want to do with the footage?
+<select id="advisor-edit-goal" py-change="clear_advisor_results"><option value="">Choose an editing goal</option><option value="transcript">Cut or rearrange by transcript</option><option value="objects">Remove or replace objects</option><option value="highlights">Create highlights from a long video</option></select></label>
+<label>Preferred provider<select id="advisor-provider" py-change="clear_advisor_results"></select></label>
+<label id="advisor-volume-label"><span id="advisor-volume-caption">Monthly workload</span><input id="advisor-volume" type="number" min="1" step="any" required py-input="clear_advisor_results"></label>
+<label id="advisor-input-label" hidden>Input tokens per request<input id="advisor-input" type="number" min="0" step="1" py-input="clear_advisor_results"></label>
+<label id="advisor-output-label" hidden>Output tokens per request<input id="advisor-output" type="number" min="0" step="1" py-input="clear_advisor_results"></label>
+<label id="advisor-budget-label">Monthly budget in USD (optional)<input id="advisor-budget" type="number" min="0" step="any" placeholder="No limit" py-input="clear_advisor_results"></label>
+</div>
+<button type="submit" class="primary">Compare recommendations</button>
+</fieldset>
+</form>
+<div id="advisor-results" hidden>
+<p id="advisor-summary" class="status" role="status"></p>
+<div class="split">
+<div><h3>Best fit</h3><div id="advisor-fit" py-click="catalog_action"></div></div>
+<div><h3>Cost competitive</h3><div id="advisor-cost" py-click="catalog_action"></div></div>
+</div>
+</div>
+</section>
+</div>
+<div id="panel-details" hidden>
+<section><h2>Model Details</h2>
+<div class="grid">
+<label>Search models<input id="detail-query" type="search" placeholder="Name, provider, model ID, or use case" py-input="filter_details"></label>
+<label>Model<select id="detail-model" py-change="render_details"></select></label>
+</div><p id="detail-empty" role="status" hidden>No models match your search.</p></section>
+<section id="detail-card" aria-labelledby="detail-title">
+<h2 id="detail-title" tabindex="-1"></h2><p id="detail-id"></p>
+<div class="split">
+<div><h3>Use cases</h3><p id="detail-use"></p><p id="detail-fit" hidden></p></div>
+<div><h3>Best-fit domains</h3><p id="detail-domain"></p></div>
+<div><h3>Current application usage</h3><p id="detail-usage"></p><a id="detail-usage-source" target="_blank" rel="noopener noreferrer" hidden>View application documentation</a></div>
+<div id="detail-parameters-group" hidden><h3>Parameters and capabilities</h3><p id="detail-parameters"></p></div>
+<div><h3>Pricing</h3><p id="detail-rates"></p><p id="detail-basis"></p><p id="detail-pricing-note" hidden></p>
+<a id="detail-source" target="_blank" rel="noopener noreferrer">View pricing or model source</a></div>
+<div><h3>Related blogs and projects</h3><ul id="detail-resource-list" class="resource-list"></ul></div>
+</div></section>
+</div>
+</fieldset>
+</main>
+<script type="py" src="./calculator.py"></script>
+</body>
 </html>

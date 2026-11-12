@@ -1,13 +1,39 @@
-# Token ROI Calculator
+# AI Model Catalog & Token ROI Calculator
 
-Compare model costs and estimate workload savings in the browser. The catalog uses the 10 November 2026 workbook snapshot. It contains all 622 master entries and one listing for each of the 55 additional IDs on the hosting sheet. Where a hosting-only ID has multiple complete rates, the displayed listing is the lowest for the workbook’s reference workload. The app also includes the eight alternate billing entries and all seven shortlists.
+[Open the calculator](https://sakthisaravanan8531-hue.github.io/TokenROICalculator/)
 
-The ROI calculator uses entries with both input and output rates. It estimates base token charges before caching, batch discounts, and other fees. Verify rates with the provider before budgeting.
+Compare AI model prices, estimate token spend, and quantify potential savings against a baseline. The application runs in the browser and requires no API key.
 
-## Develop locally
+## Features
 
-Run `npm ci`, then `npm run dev`. Use `npm run build` to regenerate the static site in `docs/`.
+- **Cost dashboard** — Compare daily, monthly, and annual spend, view a monthly cost chart, and download the comparison as CSV.
+- **Model catalog** — Search and filter 682 catalog entries by category, provider, or the **New models** flag. Open individual entries for capabilities, use cases, and source links.
+- **Custom pricing** — Add a model using your own input and output rates per million tokens.
+- **Use-case advisor** — Describe the job, answer a task-specific follow-up, and review model or tool suggestions. Video workflows distinguish editing existing footage from generating new clips.
+- **Domain Leaders** — Review price rankings and documented use-case fit for selected comparison models.
 
-## GitHub Pages
+## How to use it
 
-In the repository's **Settings → Pages**, select **Deploy from a branch**. Set the branch to **main** and the folder to **/docs**, then save. Commit the updated `docs/` files whenever you rebuild the site.
+1. Enter the expected daily requests, input and output tokens per request, and days per month.
+2. Choose a baseline and add the models you want to compare.
+3. Select **Calculate costs**, then review the dashboard and download the CSV if needed.
+
+## Pricing and recommendation methodology
+
+The catalog is a snapshot dated 11 November 2026. Source links are available in Model Details. Token cost estimates use published base input and output rates. Monthly spend uses the configured days per month, and annual spend uses 365 days. Estimates exclude discounts, additional fees, and infrastructure costs. Verify provider rates before using an estimate in a proposal.
+
+The advisor matches task requirements to documented capabilities and catalog notes. Cost rankings require comparable rates. Where the tool uses a separate billing model, consult the linked provider plan.
+
+## Run locally
+
+From the repository root, run:
+
+```bash
+python -m http.server 8000 --directory docs
+```
+
+Open <http://localhost:8000/>. The application uses PyScript to run Python in the browser and needs internet access to load the runtime.
+
+## Deploy
+
+GitHub Pages publishes the static app from **main → /docs**. Update `docs/index.html`, `docs/dashboard.css`, and `docs/calculator.py` to change the hosted application. The earlier Vite source remains in the repository for reference. Its build also writes to `docs/`, so use the local command above to preview the Python app.
