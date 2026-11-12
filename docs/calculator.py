@@ -141,7 +141,14 @@ def safe_cell(text):
     return "'" + text if text.startswith(("=", "+", "-", "@")) else text
 
 
-EXPORT_COLUMNS = ("Model", "Daily USD", "Monthly USD", "Annual USD", "Annual savings USD", "Savings percent", "Baseline")
+def comparison_csv(rows, baseline_key):
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(("Model", "Daily USD", "Monthly USD", "Annual USD"))
+    for key, name, daily, monthly, annual, *_ in rows:
+        if key != baseline_key:
+            writer.writerow((safe_cell(name), daily, monthly, annual))
+    return output.getvalue()
 
 
 def calculate(event=None):
@@ -171,17 +178,15 @@ def calculate(event=None):
         render_leaders()
         status(str(error))
         return
-    baseline = catalog[value("baseline")]
+    baseline_key = value("baseline")
+    baseline = catalog[baseline_key]
     rows = estimate({key: catalog[key] for key in selected}, baseline, requests, prompt, completion, days)
     comparison_rows = rows
-    render_cost_overview(rows, value("baseline"))
+    render_cost_overview(rows, baseline_key)
     render_leaders()
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(EXPORT_COLUMNS)
     for key, name, daily, monthly, annual, savings, percent in rows:
         row = document.createElement("tr")
-        if key == value("baseline"):
+        if key == baseline_key:
             row.setAttribute("data-baseline", "")
         values = [name, *(f"${amount:,.2f}" for amount in (daily, monthly, annual, savings)), "—" if percent is None else f"{percent:,.2f}%"]
         for item in values:
@@ -193,8 +198,7 @@ def calculate(event=None):
         button.setAttribute("data-remove-model", key)
         cell(row, "").appendChild(button)
         results.appendChild(row)
-        writer.writerow((safe_cell(name), daily, monthly, annual, savings, percent, safe_cell(baseline.name)))
-    download.href = "data:text/csv;charset=utf-8," + quote("\ufeff" + output.getvalue())
+    download.href = "data:text/csv;charset=utf-8," + quote("\ufeff" + comparison_csv(rows, baseline_key))
     download.hidden = False
     element("export-report").href = download.href
     status(f"{len(rows)} models compared · Baseline: {baseline.name}")
