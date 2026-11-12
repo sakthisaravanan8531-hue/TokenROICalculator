@@ -1,3 +1,6 @@
+from base64 import b64encode
+from xml.sax.saxutils import escape
+from zipfile import ZIP_DEFLATED, ZipFile
 import csv
 import io
 import json
@@ -141,6 +144,83 @@ def safe_cell(text):
     return "'" + text if text.startswith(("=", "+", "-", "@")) else text
 
 
+EXPORT_COLUMNS = ("Model", "Daily USD", "Monthly USD", "Annual USD", "Annual savings USD", "Savings percent", "Baseline")
+XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+
+def excel_report(rows, baseline):
+    spreadsheet = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+    office_rel = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+    package_rel = "http://schemas.openxmlformats.org/package/2006/relationships"
+    content_types = "http://schemas.openxmlformats.org/package/2006/content-types"
+    header = '<?xml version="1.0" encoding="UTF-8"?>'
+    sheet_rows = []
+    records = [EXPORT_COLUMNS]
+    records.extend((name, daily, monthly, annual, savings, percent / 100 if percent is not None else None, baseline)
+                   for _, name, daily, monthly, annual, savings, percent in rows)
+    for row_index, record in enumerate(records, 1):
+        cells = []
+        for column, item in enumerate(record):
+            if item is None:
+                continue
+            address = f"{chr(65 + column)}{row_index}"
+            if isinstance(item, str):
+                clean = re.sub(r"[^\x09\x0a\x0d\x20-\ud7ff\ue000-\ufffd\U00010000-\U0010ffff]", "", item)
+                style = ' s="3"' if row_index == 1 else ""
+                cells.append(f'<c r="{address}"{style} t="inlineStr"><is><t xml:space="preserve">{escape(clean)}</t></is></c>')
+            else:
+                style = 2 if column == 5 else 1
+                cells.append(f'<c r="{address}" s="{style}"><v>{item}</v></c>')
+        sheet_rows.append(f'<row r="{row_index}">{"".join(cells)}</row>')
+
+    files = {
+        "[Content_Types].xml": f'''<Types xmlns="{content_types}">
+          <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+          <Default Extension="xml" ContentType="application/xml"/>
+          <Override PartName="/xl/workbook.xml" ContentType="{XLSX_MIME.replace(".sheet", ".sheet.main+xml")}"/>
+          <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+          <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
+        </Types>''',
+        "_rels/.rels": f'''<Relationships xmlns="{package_rel}">
+          <Relationship Id="rId1" Type="{office_rel}/officeDocument" Target="xl/workbook.xml"/>
+        </Relationships>''',
+        "xl/workbook.xml": f'''<workbook xmlns="{spreadsheet}" xmlns:r="{office_rel}">
+          <sheets><sheet name="Cost comparison" sheetId="1" r:id="rId1"/></sheets>
+        </workbook>''',
+        "xl/_rels/workbook.xml.rels": f'''<Relationships xmlns="{package_rel}">
+          <Relationship Id="rId1" Type="{office_rel}/worksheet" Target="worksheets/sheet1.xml"/>
+          <Relationship Id="rId2" Type="{office_rel}/styles" Target="styles.xml"/>
+        </Relationships>''',
+        "xl/styles.xml": f'''<styleSheet xmlns="{spreadsheet}">
+          <numFmts count="1"><numFmt numFmtId="164" formatCode="&quot;$&quot;#,##0.00"/></numFmts>
+          <fonts count="2"><font><sz val="11"/><name val="Calibri"/></font>
+          <font><b/><color rgb="FFFFFFFF"/><sz val="11"/><name val="Calibri"/></font></fonts>
+          <fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>
+          <fill><patternFill patternType="solid"><fgColor rgb="FF142A43"/><bgColor indexed="64"/></patternFill></fill></fills>
+          <borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>
+          <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+          <cellXfs count="4">
+            <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+            <xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
+            <xf numFmtId="10" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
+            <xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/>
+          </cellXfs>
+          <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
+        </styleSheet>''',
+        "xl/worksheets/sheet1.xml": f'''<worksheet xmlns="{spreadsheet}">
+          <sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>
+          <cols><col min="1" max="1" width="40" customWidth="1"/><col min="2" max="6" width="22" customWidth="1"/>
+          <col min="7" max="7" width="40" customWidth="1"/></cols>
+          <sheetData>{"".join(sheet_rows)}</sheetData><autoFilter ref="A1:G{len(records)}"/>
+        </worksheet>''',
+    }
+    output = io.BytesIO()
+    with ZipFile(output, "w", ZIP_DEFLATED) as workbook:
+        for path, xml in files.items():
+            workbook.writestr(path, header + xml)
+    return output.getvalue()
+
+
 def calculate(event=None):
     global comparison_rows
     results = element("results")
@@ -149,6 +229,9 @@ def calculate(event=None):
     element("cost-empty").hidden = False
     download = element("csv")
     download.hidden = True
+    excel = element("xlsx")
+    excel.hidden = True
+    excel.removeAttribute("href")
     element("export-report").removeAttribute("href")
     if not selected:
         comparison_rows = []
@@ -174,7 +257,7 @@ def calculate(event=None):
     render_leaders()
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(("Model", "Daily USD", "Monthly USD", "Annual USD", "Annual savings USD", "Savings percent", "Baseline"))
+    writer.writerow(EXPORT_COLUMNS)
     for key, name, daily, monthly, annual, savings, percent in rows:
         row = document.createElement("tr")
         if key == value("baseline"):
@@ -192,7 +275,9 @@ def calculate(event=None):
         writer.writerow((safe_cell(name), daily, monthly, annual, savings, percent, safe_cell(baseline.name)))
     download.href = "data:text/csv;charset=utf-8," + quote("\ufeff" + output.getvalue())
     download.hidden = False
-    element("export-report").href = download.href
+    excel.href = f"data:{XLSX_MIME};base64," + b64encode(excel_report(rows, baseline.name)).decode("ascii")
+    excel.hidden = False
+    element("export-report").href = excel.href
     status(f"{len(rows)} models compared · Baseline: {baseline.name}")
 
 
