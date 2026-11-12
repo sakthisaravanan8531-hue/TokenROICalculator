@@ -227,7 +227,7 @@ def show_panel(event):
 
 
 def activate_panel(active):
-    for name in ("full", "roi", "details"):
+    for name in ("full", "roi", "details", "frontier"):
         element(f"panel-{name}").hidden = name != active
         element(f"tab-{name}").setAttribute("aria-pressed", str(name == active).lower())
     if active == "full":
@@ -270,11 +270,21 @@ def filter_full(event=None):
     render_full()
 
 
-def toggle_new_only(event):
-    button = event.currentTarget
-    pressed = button.getAttribute("aria-pressed") == "true"
-    button.setAttribute("aria-pressed", "false" if pressed else "true")
-    filter_full()
+def filter_frontier(event=None):
+    query = value("frontier-query").strip().casefold()
+    sections = document.querySelectorAll("#panel-frontier .frontier-section")
+    total = 0
+    for index, section in enumerate(sections):
+        matches = 0
+        for row in section.querySelectorAll("tbody tr"):
+            row.hidden = bool(query) and query not in row.textContent.casefold()
+            matches += not row.hidden
+        total += matches
+        section.hidden = bool(query) and not matches
+        section.open = bool(matches) if query else index == 0
+    message = element("frontier-status")
+    message.textContent = f"{total} matching workbook rows" if total else "No workbook rows match this search."
+    message.hidden = not query
 
 
 def sort_full(event):
@@ -294,12 +304,10 @@ def change_page(event):
 def render_full():
     query = value("full-query").strip().casefold()
     category, provider = value("category"), value("provider")
-    new_only = element("new-only").getAttribute("aria-pressed") == "true"
     matching = [
         row for row in snapshot["models"]
         if (not category or row["category"] == category)
         and (not provider or row["provider"] == provider)
-        and (not new_only or row["isNew"])
         and query in " ".join(str(row.get(key) or "") for key in ("name", "provider", "id", "useCase")).casefold()
     ]
     available = [row for row in matching if row[sort_field] is not None]
@@ -319,12 +327,7 @@ def render_full():
         key = row["id"]
         model = catalog[key]
         tr = document.createElement("tr")
-        title = cell(tr, row["name"])
-        if row["isNew"]:
-            badge = document.createElement("span")
-            badge.className = "tag new"
-            badge.textContent = "NEW"
-            title.appendChild(badge)
+        cell(tr, row["name"])
         cell(tr, row["provider"])
         tag = document.createElement("span")
         tag.className = "tag"

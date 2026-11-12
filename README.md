@@ -7,7 +7,8 @@ Compare AI model prices, estimate token spend, and compare selected models. The 
 ## Features
 
 - **Cost dashboard** — Compare daily, monthly, and annual spend, view a monthly cost chart, and download the comparison as CSV.
-- **Model catalog** — Search and filter 682 catalog entries by category, provider, or the **New models** flag. Open individual entries for capabilities, use cases, and source links.
+- **Model catalog** — Search and filter 682 catalog entries by category or provider. Open individual entries for capabilities, use cases, and source links.
+- **Frontier models** — Browse the supplied Excel workbook’s model specifications, pricing examples, and industry guide.
 - **Custom pricing** — Add a model using your own input and output rates per million tokens.
 - **Use-case advisor** — Describe the job, answer a task-specific follow-up, and review model or tool suggestions. Video workflows distinguish editing existing footage from generating new clips.
 - **Domain Leaders** — Review price rankings and documented use-case fit for selected comparison models.
