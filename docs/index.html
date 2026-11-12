@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Compare AI model pricing, estimate token costs and evaluate potential savings for your workload.">
+<meta name="description" content="Compare AI model pricing, estimate token costs for your selected models.">
 <title>AI Model Catalog &amp; Token ROI Calculator</title>
 <script type="module" src="https://pyscript.net/releases/2025.11.1/core.js"></script>
 <style>
@@ -83,8 +83,7 @@ th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line)} th{
 </div><small>Estimates use base token rates in USD and 365 days per year.</small></section>
 <section aria-labelledby="comparison-title"><h2 id="comparison-title">Cost comparison</h2>
 <div class="grid">
-<label>Baseline model<select id="baseline" py-change="calculate"></select></label>
-<label>Add a comparison model<select id="comparison-model" py-change="add_comparison_model"></select></label>
+<label>Add a model<select id="comparison-model" py-change="add_comparison_model"></select></label>
 </div>
 <div class="actions"><button type="button" class="primary" py-click="calculate">Calculate costs</button></div>
 <p id="status" class="status" aria-live="polite"></p>
@@ -101,14 +100,13 @@ th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line)} th{
 <div class="results-head"><div><h2 id="results-title">Cost results</h2><p>Estimated spend in USD</p></div><a id="cost-report" class="action" download="token-roi-comparison.csv" hidden>Export report</a></div>
 <div id="cost-overview" hidden>
 <dl class="metrics">
-<div class="metric"><dt>Baseline monthly cost</dt><dd id="metric-baseline"></dd><small id="metric-baseline-name"></small></div>
+<div class="metric"><dt>Selected models</dt><dd id="metric-count"></dd></div>
 <div class="metric"><dt>Lowest monthly cost</dt><dd id="metric-lowest"></dd><small id="metric-lowest-name"></small></div>
-<div class="metric savings"><dt>Potential annual savings</dt><dd id="metric-savings"></dd><small id="metric-savings-detail"></small></div>
 </dl>
 <div class="cost-chart"><h3 id="cost-chart-title">Monthly cost by model</h3><ul id="cost-chart-rows" class="chart-list" aria-labelledby="cost-chart-title"></ul></div>
 </div>
-<p id="cost-empty" hidden>Enter a valid workload and select models to see results.</p>
-<div class="scroll"><table class="results-table" aria-label="Model cost comparison results"><thead><tr><th>Model</th><th>USD / day</th><th>USD / month</th><th>USD / year</th><th>Annual savings</th><th>Savings %</th><th scope="col">Actions</th></tr></thead><tbody id="results" py-click="remove_model"></tbody></table></div>
+<p id="cost-empty" hidden>Select one or more models and enter a valid workload to see costs.</p>
+<div class="scroll"><table class="results-table" aria-label="Model cost comparison results"><thead><tr><th>Model</th><th>USD / day</th><th>USD / month</th><th>USD / year</th><th scope="col">Actions</th></tr></thead><tbody id="results" py-click="remove_model"></tbody></table></div>
 </section>
 <section aria-labelledby="leader-title">
 <h2 id="leader-title">Domain Leaders</h2>

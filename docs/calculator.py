@@ -33,19 +33,16 @@ def number(text, label, whole=False):
     raise ValueError(f"{label} must be a non-negative {kind} up to 10^15.")
 
 
-def estimate(models, baseline, requests, input_tokens, output_tokens, days):
+def estimate(models, requests, input_tokens, output_tokens, days):
     def daily(model):
         return requests * (
             input_tokens * model.input_rate + output_tokens * model.output_rate
         ) / MILLION
 
-    baseline_cost = daily(baseline)
     rows = []
     for key, model in models.items():
         cost = daily(model)
-        savings = baseline_cost - cost
-        percent = savings / baseline_cost * 100 if baseline_cost else None
-        rows.append((key, model.name, cost, cost * days, cost * 365, savings * 365, percent))
+        rows.append((key, model.name, cost, cost * days, cost * 365))
     return sorted(rows, key=lambda row: row[2])
 
 
@@ -80,14 +77,6 @@ def option(select, key, label):
 
 
 def refresh():
-    current = value("baseline")
-    target = element("baseline")
-    target.replaceChildren()
-    for key in selected:
-        option(target, key, catalog[key].name)
-    if current in selected:
-        target.value = current
-    target.disabled = not selected
     available = sorted(
         (key for key, model in catalog.items() if model.comparable and key not in selected),
         key=lambda key: catalog[key].name.casefold(),
@@ -133,21 +122,19 @@ def remove_model(event):
     if key in selected:
         selected.remove(key)
         refresh()
-        target = element("baseline") if selected else element("comparison-model")
-        target.focus()
+        element("comparison-model").focus()
 
 
 def safe_cell(text):
     return "'" + text if text.startswith(("=", "+", "-", "@")) else text
 
 
-def comparison_csv(rows, baseline_key):
+def comparison_csv(rows):
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(("Model", "Daily USD", "Monthly USD", "Annual USD"))
-    for key, name, daily, monthly, annual, *_ in rows:
-        if key != baseline_key:
-            writer.writerow((safe_cell(name), daily, monthly, annual))
+    for _, name, daily, monthly, annual in rows:
+        writer.writerow((safe_cell(name), daily, monthly, annual))
     return output.getvalue()
 
 
@@ -164,7 +151,7 @@ def calculate(event=None):
     if not selected:
         comparison_rows = []
         render_leaders()
-        status("Add a model to compare.")
+        status("Select at least one model to estimate costs.")
         return
     try:
         requests = number(value("requests"), "Requests per day", whole=True)
@@ -178,17 +165,13 @@ def calculate(event=None):
         render_leaders()
         status(str(error))
         return
-    baseline_key = value("baseline")
-    baseline = catalog[baseline_key]
-    rows = estimate({key: catalog[key] for key in selected}, baseline, requests, prompt, completion, days)
+    rows = estimate({key: catalog[key] for key in selected}, requests, prompt, completion, days)
     comparison_rows = rows
-    render_cost_overview(rows, baseline_key)
+    render_cost_overview(rows)
     render_leaders()
-    for key, name, daily, monthly, annual, savings, percent in rows:
+    for key, name, daily, monthly, annual in rows:
         row = document.createElement("tr")
-        if key == baseline_key:
-            row.setAttribute("data-baseline", "")
-        values = [name, *(f"${amount:,.2f}" for amount in (daily, monthly, annual, savings)), "—" if percent is None else f"{percent:,.2f}%"]
+        values = [name, *(f"${amount:,.2f}" for amount in (daily, monthly, annual))]
         for item in values:
             cell(row, item)
         button = document.createElement("button")
@@ -198,38 +181,29 @@ def calculate(event=None):
         button.setAttribute("data-remove-model", key)
         cell(row, "").appendChild(button)
         results.appendChild(row)
-    download.href = "data:text/csv;charset=utf-8," + quote("\ufeff" + comparison_csv(rows, baseline_key))
+    download.href = "data:text/csv;charset=utf-8," + quote("\ufeff" + comparison_csv(rows))
     download.hidden = False
     element("export-report").href = download.href
-    status(f"{len(rows)} models compared · Baseline: {baseline.name}")
+    status("1 model selected" if len(rows) == 1 else f"{len(rows)} models selected")
 
 
-def render_cost_overview(rows, baseline_key):
-    _, baseline_name, _, baseline_monthly, *_ = next(row for row in rows if row[0] == baseline_key)
-    _, lowest_name, _, lowest_monthly, _, savings, percent = rows[0]
-    for identifier, content in (
-        ("metric-baseline", f"${baseline_monthly:,.2f}"),
-        ("metric-baseline-name", baseline_name),
-        ("metric-lowest", f"${lowest_monthly:,.2f}"),
-        ("metric-lowest-name", lowest_name),
-        ("metric-savings", f"${savings:,.2f}"),
-        ("metric-savings-detail", f"{percent:,.1f}% below baseline" if percent else "Compared with baseline"),
-    ):
-        element(identifier).textContent = content
+def render_cost_overview(rows):
+    _, lowest_name, _, lowest_monthly, _ = rows[0]
+    element("metric-count").textContent = str(len(rows))
+    element("metric-lowest").textContent = f"${lowest_monthly:,.2f}"
+    element("metric-lowest-name").textContent = lowest_name
 
     shown = rows[:5]
-    if all(row[0] != baseline_key for row in shown):
-        shown = shown[:4] + [next(row for row in rows if row[0] == baseline_key)]
     maximum = max(row[3] for row in shown)
     chart = element("cost-chart-rows")
     chart.replaceChildren()
     element("cost-chart-title").textContent = (
-        "Monthly cost by model" if len(shown) == len(rows) else "Monthly cost · lowest estimates and baseline"
+        "Monthly cost by model" if len(shown) == len(rows) else "Monthly cost · five lowest estimates"
     )
-    for key, name, _, monthly, *_ in shown:
+    for _, name, _, monthly, _ in shown:
         item = document.createElement("li")
         for css_class, content in (
-            ("chart-name", f"{name} · Baseline" if key == baseline_key else name),
+            ("chart-name", name),
             ("chart-track", ""),
             ("chart-value", f"${monthly:,.2f}"),
         ):
@@ -970,7 +944,7 @@ snapshot = json.loads(CATALOG, parse_float=Decimal, parse_int=Decimal)
 metadata = {row["id"]: row for row in snapshot["models"]}
 element("catalog-total").textContent = str(len(metadata))
 catalog = load_catalog()
-selected = ["openai/gpt-4o", "google/gemini-3.5-flash-lite", "anthropic/claude-sonnet-5-5"]
+selected = []
 full_page, sort_field, descending = 0, "name", False
 for field, label in (("category", "All Categories"), ("provider", "All Providers")):
     select = element(field)

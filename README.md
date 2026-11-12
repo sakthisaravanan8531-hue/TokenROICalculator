@@ -2,7 +2,7 @@
 
 [Open the calculator](https://sakthisaravanan8531-hue.github.io/TokenROICalculator/)
 
-Compare AI model prices, estimate token spend, and quantify potential savings against a baseline. The application runs in the browser and requires no API key.
+Compare AI model prices, estimate token spend, and compare selected models. The application runs in the browser and requires no API key.
 
 ## Features
 
@@ -15,8 +15,8 @@ Compare AI model prices, estimate token spend, and quantify potential savings ag
 ## How to use it
 
 1. Enter the expected daily requests, input and output tokens per request, and days per month.
-2. Choose a baseline and add the models you want to compare.
-3. Select **Calculate costs**, then review the dashboard and download the CSV if needed.
+2. Add one or more models to estimate their costs.
+3. Select **Calculate costs**, then review the dashboard or download the selected model costs as CSV.
 
 ## Pricing and recommendation methodology
 
