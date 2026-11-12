@@ -221,17 +221,23 @@ def excel_report(rows, baseline):
     return output.getvalue()
 
 
+def comparison_archive(rows, baseline, csv_text):
+    output = io.BytesIO()
+    with ZipFile(output, "w", ZIP_DEFLATED) as report:
+        report.writestr("token-roi-comparison.xlsx", excel_report(rows, baseline))
+        report.writestr("token-roi-comparison.csv", "\ufeff" + csv_text)
+    return output.getvalue()
+
+
 def calculate(event=None):
     global comparison_rows
     results = element("results")
     results.replaceChildren()
     element("cost-overview").hidden = True
     element("cost-empty").hidden = False
-    download = element("csv")
+    download = element("cost-report")
     download.hidden = True
-    excel = element("xlsx")
-    excel.hidden = True
-    excel.removeAttribute("href")
+    download.removeAttribute("href")
     element("export-report").removeAttribute("href")
     if not selected:
         comparison_rows = []
@@ -273,11 +279,10 @@ def calculate(event=None):
         cell(row, "").appendChild(button)
         results.appendChild(row)
         writer.writerow((safe_cell(name), daily, monthly, annual, savings, percent, safe_cell(baseline.name)))
-    download.href = "data:text/csv;charset=utf-8," + quote("\ufeff" + output.getvalue())
+    archive = comparison_archive(rows, baseline.name, output.getvalue())
+    download.href = "data:application/zip;base64," + b64encode(archive).decode("ascii")
     download.hidden = False
-    excel.href = f"data:{XLSX_MIME};base64," + b64encode(excel_report(rows, baseline.name)).decode("ascii")
-    excel.hidden = False
-    element("export-report").href = excel.href
+    element("export-report").href = download.href
     status(f"{len(rows)} models compared · Baseline: {baseline.name}")
 
 

@@ -50,7 +50,7 @@ th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line)} th{
 <body>
 <main>
 <header><span class="brand" aria-hidden="true">ROI</span><div><h1>AI Model Catalog &amp; Token ROI Calculator</h1><p>Compare AI model pricing and estimate workload costs. Catalog snapshot: 11 November 2026.</p></div>
-<div class="header-actions" id="header-actions" hidden><button type="button" py-click="toggle_theme" aria-label="Toggle color theme">☀</button><a id="export-report" class="action primary" download="token-roi-comparison.xlsx">Download Excel</a></div></header>
+<div class="header-actions" id="header-actions" hidden><button type="button" py-click="toggle_theme" aria-label="Toggle color theme">☀</button><a id="export-report" class="action primary" download="token-roi-report.zip">Download report</a></div></header>
 <p id="loading" role="status">Loading calculator…</p>
 <fieldset id="app" disabled hidden style="border:0;padding:0;margin:0;min-width:0">
 <nav aria-label="Calculator sections">
@@ -98,7 +98,7 @@ th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line)} th{
 </section>
 </div>
 <section aria-labelledby="results-title">
-<div class="results-head"><div><h2 id="results-title">Cost results</h2><p>Estimated spend in USD</p></div><div class="actions"><a id="xlsx" class="action" download="token-roi-comparison.xlsx" hidden>Export Excel</a><a id="csv" class="action" download="token-roi-comparison.csv" hidden>Export CSV</a></div></div>
+<div class="results-head"><div><h2 id="results-title">Cost results</h2><p>Estimated spend in USD</p></div><a id="cost-report" class="action" download="token-roi-report.zip" hidden>Export report</a></div>
 <div id="cost-overview" hidden>
 <dl class="metrics">
 <div class="metric"><dt>Baseline monthly cost</dt><dd id="metric-baseline"></dd><small id="metric-baseline-name"></small></div>
