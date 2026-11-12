@@ -1,5 +1,6 @@
 """Refresh the published calculator catalog from Models.dev."""
 import argparse
+from hashlib import sha256
 from datetime import date
 import json
 import math
@@ -108,6 +109,8 @@ def main():
     calculator.write_text(generated, encoding="utf-8")
     index = args.site / "index.html"
     html = index.read_text(encoding="utf-8")
+    revision = sha256(generated.encode("utf-8")).hexdigest()[:16]
+    html = html.replace('./calculator.py"', f'./calculator.py?v={revision}"')
     index.write_text(html.replace("Catalog snapshot: 11 November 2026.", f"Catalog refreshed: {date.today().isoformat()} (UTC)."), encoding="utf-8")
     print(f"Applied {updated} rate pairs and added {added} listings. Total entries: {len(snapshot['models'])}.")
 
