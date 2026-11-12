@@ -943,7 +943,44 @@ def recommend_models(event):
     element("advisor-results").hidden = False
 
 
+# Confirmed API retirements checked on 2026-11-12.
+# Match exact provider IDs so independent hosting providers are unaffected.
+RETIRED_MODEL_IDS = {
+    # https://platform.claude.com/docs/en/about-claude/model-deprecations
+    "anthropic/claude-3-haiku-20240307",
+    "anthropic/claude-3-5-haiku-20241022",
+    "anthropic/claude-3-5-sonnet-20241022",
+    "anthropic/claude-3-7-sonnet-20250219",
+    "anthropic/claude-opus-4-20250514",
+    "anthropic/claude-opus-4-0",
+    "anthropic/claude-opus-4-1-20250805",
+    "anthropic/claude-opus-4-1",
+    "anthropic/claude-sonnet-4-20250514",
+    "anthropic/claude-sonnet-4-0",
+    # https://ai.google.dev/gemini-api/docs/deprecations
+    "google/gemini-2.0-flash",
+    "google/gemini-2.0-flash-lite",
+    "google/gemini-3-pro-preview",
+    # https://developers.openai.com/api/docs/deprecations
+    "openai/gpt-4-turbo",
+    "openai/gpt-4.1-nano",
+    "openai/gpt-4o-2024-05-13",
+    "openai/gpt-5-chat-latest",
+    "openai/gpt-5-codex",
+    "openai/gpt-5.1-chat-latest",
+    "openai/gpt-5.1-codex",
+    "openai/gpt-5.1-codex-max",
+    "openai/gpt-5.1-codex-mini",
+    "openai/gpt-5.2-chat-latest",
+    "openai/gpt-5.2-codex",
+    "openai/gpt-5.3-chat-latest",
+    "openai/gpt-image-1",
+}
+
 snapshot = json.loads(CATALOG, parse_float=Decimal, parse_int=Decimal)
+snapshot["models"] = [
+    row for row in snapshot["models"] if row["id"] not in RETIRED_MODEL_IDS
+]
 metadata = {row["id"]: row for row in snapshot["models"]}
 element("catalog-total").textContent = str(len(metadata))
 catalog = load_catalog()

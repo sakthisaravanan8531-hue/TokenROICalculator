@@ -1,5 +1,6 @@
 """Refresh the published calculator catalog from Models.dev."""
 import argparse
+import ast
 from hashlib import sha256
 from datetime import date
 import json
@@ -25,7 +26,28 @@ def token_rates(model):
     return None
 
 
-def refresh(snapshot, upstream):
+def retired_model_ids(calculator_source):
+    for statement in ast.parse(calculator_source).body:
+        if isinstance(statement, ast.Assign) and any(
+            isinstance(target, ast.Name) and target.id == "RETIRED_MODEL_IDS"
+            for target in statement.targets
+        ):
+            return ast.literal_eval(statement.value)
+    raise ValueError("Calculator retirement list is missing")
+
+
+def refresh(snapshot, upstream, retired_ids):
+    inactive_ids = retired_ids | {
+        f"{provider_id}/{model_id}"
+        for provider_id, provider in upstream.items()
+        for model_id, model in (provider.get("models") or {}).items()
+        if model.get("status") == "deprecated"
+    }
+    original_count = len(snapshot["models"])
+    snapshot["models"] = [
+        row for row in snapshot["models"] if row["id"] not in inactive_ids
+    ]
+    hidden = original_count - len(snapshot["models"])
     existing = {row["id"] for row in snapshot["models"]}
     updated = added = 0
     for provider_id in sorted(DIRECT_PROVIDERS):
@@ -54,7 +76,7 @@ def refresh(snapshot, upstream):
             key = f"{provider_id}/{model_id}"
             modalities = model.get("modalities") or {}
             rates = token_rates(model)
-            if key in existing or model_id in existing or rates is None or model.get("type") or model.get("status") == "deprecated":
+            if key in inactive_ids or key in existing or model_id in existing or rates is None or model.get("type"):
                 continue
             if "text" not in (modalities.get("input") or []) or modalities.get("output") != ["text"]:
                 continue
@@ -72,7 +94,7 @@ def refresh(snapshot, upstream):
             })
             existing.add(key)
             added += 1
-    return updated, added
+    return updated, added, hidden
 
 
 def model_source(provider, model):
@@ -101,7 +123,7 @@ def main():
     before, payload = source.split(START, 1)
     catalog, after = payload.split(END, 1)
     snapshot = json.loads(catalog)
-    updated, added = refresh(snapshot, upstream)
+    updated, added, hidden = refresh(snapshot, upstream, retired_model_ids(source))
     # Escape apostrophes so upstream text cannot close the embedded raw string.
     payload = json.dumps(snapshot, ensure_ascii=True, separators=(",", ":")).replace("'", r"\u0027")
     generated = before + START + payload + END + after
@@ -112,7 +134,7 @@ def main():
     revision = sha256(generated.encode("utf-8")).hexdigest()[:16]
     html = html.replace('./calculator.py"', f'./calculator.py?v={revision}"')
     index.write_text(html.replace("Catalog snapshot: 11 November 2026.", f"Catalog refreshed: {date.today().isoformat()} (UTC)."), encoding="utf-8")
-    print(f"Applied {updated} rate pairs and added {added} listings. Total entries: {len(snapshot['models'])}.")
+    print(f"Applied {updated} rate pairs and added {added} listings. Hid {hidden} inactive listings. Total entries: {len(snapshot['models'])}.")
 
 
 if __name__ == "__main__":
