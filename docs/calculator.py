@@ -1025,213 +1025,210 @@ element("app").hidden = False
 element("header-actions").hidden = False
 element("loading").hidden = True
 
-
-# ─── MEGA FEATURE EXTENSIONS (appended by mega_update.py) ─────────────────────
+# ─── MEGA FEATURE EXTENSIONS v3 (using pyscript document, no create_proxy) ────
 
 INR_RATE = 84.5
 CLOUD_MARKUPS = {"AWS Bedrock": 0.15, "Azure AI": 0.18, "GCP Vertex AI": 0.12}
 
-def _get_workload_ext():
-    """Return (batch_factor, show_inr, show_cloud)."""
+def _get_toggle(el_id):
     try:
-        batch = Element("batch-toggle").element.checked
+        return Element(el_id).element.checked
     except Exception:
-        batch = False
-    try:
-        show_inr = Element("inr-toggle").element.checked
-    except Exception:
-        show_inr = False
-    try:
-        show_cloud = Element("cloud-toggle").element.checked
-    except Exception:
-        show_cloud = False
-    return (Decimal("0.5") if batch else Decimal("1")), show_inr, show_cloud
+        return False
 
 def _fmt_inr(usd_val):
     inr = float(usd_val) * INR_RATE
-    if inr >= 1_00_000:
-        return f"₹{inr/1_00_000:.2f}L"
+    if inr >= 100000:
+        return f"\u20b9{inr/100000:.2f}L"
     if inr >= 1000:
-        return f"₹{inr:,.0f}"
-    return f"₹{inr:.2f}"
+        return f"\u20b9{inr:,.0f}"
+    return f"\u20b9{inr:.2f}"
 
-def _update_inr_ui(show_inr, monthly_costs):
-    """Toggle INR column header + metric."""
+def _build_domain_chips():
+    """Populate domain filter chip strip — called on load."""
     try:
-        inr_head = Element("inr-col-head")
-        inr_metric = Element("inr-metric")
-        inr_head.element.hidden = not show_inr
-        inr_metric.element.hidden = not show_inr
-        if show_inr and monthly_costs:
-            best = min(monthly_costs.values())
-            Element("metric-lowest-inr").element.textContent = _fmt_inr(best)
+        chips_el = Element("domain-chips").element
+        chips_el.innerHTML = ""
+        cats = sorted(set(m.get("category","") for m in CATALOG_MODELS if m.get("category","")))
+
+        # All chip
+        btn = document.createElement("button")
+        btn.className = "chip active"
+        btn.textContent = "\u2726 All"
+        btn.setAttribute("data-domain", "")
+        chips_el.appendChild(btn)
+
+        for cat in cats[:32]:
+            btn = document.createElement("button")
+            btn.className = "chip"
+            btn.textContent = cat
+            btn.setAttribute("data-domain", cat)
+            chips_el.appendChild(btn)
     except Exception:
         pass
 
-def _update_batch_metric(batch_factor, monthly_costs_base):
-    """Show batch savings metric."""
+def chip_click(evt):
+    """Handle domain chip click — bound via py-click on chip-strip div."""
     try:
-        bm = Element("batch-metric")
-        if batch_factor < 1 and monthly_costs_base:
-            total_base = sum(float(v) for v in monthly_costs_base.values())
-            savings = total_base * 0.5
-            Element("metric-batch-save").element.textContent = f"${savings:,.2f}"
-            bm.element.hidden = False
-        else:
-            bm.element.hidden = True
-    except Exception:
-        pass
-
-def _update_cloud_breakdown(show_cloud, monthly_costs):
-    """Render cloud provider breakdown panel."""
-    try:
-        panel = Element("cloud-breakdown-panel")
-        rows_el = Element("cloud-breakdown-rows")
-        panel.element.hidden = not show_cloud
-        if not show_cloud or not monthly_costs:
+        target = evt.target
+        domain = target.getAttribute("data-domain")
+        if domain is None:
             return
-        # Build rows HTML
-        html_rows = ""
-        for provider, markup in CLOUD_MARKUPS.items():
-            avg_monthly = sum(float(v) for v in monthly_costs.values()) / max(len(monthly_costs), 1)
-            cost_with_markup = avg_monthly * (1 + markup)
-            html_rows += (
-                f'<div class="cloud-row">'
-                f'<span class="cloud-name">{provider}</span>'
-                f'<span class="cloud-markup">+{int(markup*100)}% markup</span>'
-                f'<span class="cloud-cost">${cost_with_markup:,.2f}/mo avg</span>'
-                f'</div>'
-            )
-        rows_el.element.innerHTML = html_rows
+        for c in document.querySelectorAll(".chip-strip .chip"):
+            c.classList.remove("active")
+        target.classList.add("active")
+        Element("category").element.value = domain if domain else ""
+        filter_full()
     except Exception:
         pass
 
-def _update_chart_ext(monthly_costs, show_inr):
-    """Update chart bars with optional INR sub-label."""
+def _apply_ext_ui(rows):
+    """Apply INR / cloud enhancements after calculate() runs. rows = comparison_rows."""
     try:
-        rows = document.querySelectorAll(".chart-item")
-        if not monthly_costs:
-            return
-        max_val = max(float(v) for v in monthly_costs.values()) or 1
-        items = list(monthly_costs.items())
-        for i, row in enumerate(rows):
-            if i >= len(items):
-                break
-            name, val = items[i]
-            pct = float(val) / max_val * 100
-            bar = row.querySelector(".chart-bar")
-            if bar:
-                bar.style.width = f"{pct:.1f}%"
-            if show_inr:
-                inr_el = row.querySelector(".chart-inr")
-                if not inr_el:
-                    lbl = row.querySelector(".chart-label")
-                    if lbl:
-                        span = document.createElement("span")
-                        span.className = "chart-inr"
-                        span.textContent = _fmt_inr(val)
-                        lbl.appendChild(span)
-                else:
-                    inr_el.textContent = _fmt_inr(val)
-    except Exception:
-        pass
+        show_inr   = _get_toggle("inr-toggle")
+        show_cloud = _get_toggle("cloud-toggle")
+        show_batch = _get_toggle("batch-toggle")
 
-def _render_inr_cells(show_inr, monthly_costs):
-    """Insert INR cells into results table rows."""
-    try:
-        rows = document.querySelectorAll("#results tr")
-        for row in rows:
-            existing = row.querySelector(".inr-cell")
+        # Build monthly_costs dict from rows: (key, name, daily, monthly, annual)
+        monthly_costs = {name: float(monthly) for _, name, _, monthly, _ in rows}
+
+        # INR header + metric
+        try:
+            Element("inr-col-head").element.hidden = not show_inr
+            Element("inr-metric").element.hidden   = not show_inr
+            if show_inr and monthly_costs:
+                best = min(monthly_costs.values())
+                Element("metric-lowest-inr").element.textContent = _fmt_inr(best)
+        except Exception:
+            pass
+
+        # Batch savings metric
+        try:
+            bm = Element("batch-metric").element
+            if show_batch and monthly_costs:
+                savings = sum(monthly_costs.values()) * 0.5
+                Element("metric-batch-save").element.textContent = f"${savings:,.2f}"
+                bm.hidden = False
+            else:
+                bm.hidden = True
+        except Exception:
+            pass
+
+        # Cloud breakdown
+        try:
+            panel   = Element("cloud-breakdown-panel").element
+            rows_el = Element("cloud-breakdown-rows").element
+            panel.hidden = not show_cloud
+            if show_cloud and monthly_costs:
+                avg = sum(monthly_costs.values()) / max(len(monthly_costs), 1)
+                html_rows = ""
+                for prov, markup in CLOUD_MARKUPS.items():
+                    cost = avg * (1 + markup)
+                    html_rows += (
+                        f'<div class="cloud-row">'
+                        f'<span class="cloud-name">{prov}</span>'
+                        f'<span class="cloud-markup">+{int(markup*100)}%</span>'
+                        f'<span class="cloud-cost">${cost:,.2f}/mo avg</span>'
+                        f'</div>'
+                    )
+                rows_el.innerHTML = html_rows
+        except Exception:
+            pass
+
+        # INR cells in results rows — remove stale then add fresh
+        try:
+            for old in document.querySelectorAll(".inr-cell"):
+                old.remove()
             if show_inr:
-                if not existing:
-                    td = document.createElement("td")
-                    td.className = "inr-cell"
-                    # find model name from first cell
+                result_rows = document.querySelectorAll("#results tr")
+                for row in result_rows:
                     cells = row.querySelectorAll("td")
-                    if cells.length > 0:
+                    if cells.length >= 3:
                         name = cells[0].textContent.strip()
                         cost = monthly_costs.get(name, 0)
+                        td = document.createElement("td")
+                        td.className = "inr-cell"
                         td.textContent = _fmt_inr(cost)
                         td.style.fontFamily = "var(--font-mono)"
                         td.style.color = "var(--inr)"
-                        # Insert after 3rd cell (USD/month)
-                        if cells.length >= 3:
-                            cells[2].insertAdjacentElement("afterend", td)
-            else:
-                if existing:
-                    existing.remove()
-    except Exception:
-        pass
-
-def _build_domain_chips():
-    """Populate domain filter chip strip above catalog table."""
-    try:
-        chips_el = Element("domain-chips")
-        cats = sorted(set(m.get("category","") for m in CATALOG_MODELS if m.get("category","")))
-        # All chip
-        all_chip = document.createElement("button")
-        all_chip.className = "chip active"
-        all_chip.textContent = "✦ All"
-        all_chip.setAttribute("data-domain", "")
-        all_chip.onclick = _make_chip_handler("")
-        chips_el.element.appendChild(all_chip)
-        for cat in cats[:30]:  # max 30 chips
-            chip = document.createElement("button")
-            chip.className = "chip"
-            chip.textContent = cat
-            chip.setAttribute("data-domain", cat)
-            chip.onclick = _make_chip_handler(cat)
-            chips_el.element.appendChild(chip)
-    except Exception as e:
-        pass
-
-def _make_chip_handler(domain):
-    def handler(evt):
-        # deactivate all chips
-        all_chips = document.querySelectorAll(".chip-strip .chip")
-        for c in all_chips:
-            c.classList.remove("active")
-        evt.target.classList.add("active")
-        # set category select and trigger filter
-        try:
-            cat_sel = Element("category")
-            cat_sel.element.value = domain
-            filter_full()
+                        cells[2].insertAdjacentElement("afterend", td)
         except Exception:
             pass
-    return handler
 
-def _post_calculate_ext():
-    """Called after calculate() runs — apply extra UI enhancements."""
-    try:
-        batch_factor, show_inr, show_cloud = _get_workload_ext()
-        # Collect monthly costs from results table
-        monthly_costs = {}
-        rows = document.querySelectorAll("#results tr")
-        for row in rows:
-            cells = row.querySelectorAll("td")
-            if cells.length >= 3:
-                name = cells[0].textContent.strip()
-                cost_txt = cells[2].textContent.replace("$","").replace(",","").strip()
-                try:
-                    monthly_costs[name] = float(cost_txt)
-                except Exception:
-                    pass
-        _update_inr_ui(show_inr, monthly_costs)
-        _update_batch_metric(batch_factor, monthly_costs)
-        _update_cloud_breakdown(show_cloud, monthly_costs)
-        _update_chart_ext(monthly_costs, show_inr)
-        _render_inr_cells(show_inr, monthly_costs)
+        # Cloud cost cells
+        try:
+            for old in document.querySelectorAll(".cloud-cell"):
+                old.remove()
+            Element("cloud-col-head").element.hidden = not show_cloud
+            if show_cloud and monthly_costs:
+                result_rows = document.querySelectorAll("#results tr")
+                for row in result_rows:
+                    cells = row.querySelectorAll("td")
+                    if cells.length >= 3:
+                        name = cells[0].textContent.strip()
+                        base = monthly_costs.get(name, 0)
+                        aws = base * 1.15
+                        az  = base * 1.18
+                        gcp = base * 1.12
+                        td = document.createElement("td")
+                        td.className = "cloud-cell"
+                        td.style.fontFamily = "var(--font-mono)"
+                        td.style.fontSize = "0.76rem"
+                        td.textContent = f"${aws:,.0f} / ${az:,.0f} / ${gcp:,.0f}"
+                        # append before last (Actions) cell
+                        last = cells[cells.length - 1]
+                        row.insertBefore(td, last)
+        except Exception:
+            pass
+
     except Exception:
         pass
 
-# Monkey-patch calculate to call _post_calculate_ext after
-_orig_calculate = calculate
-def calculate(*a, **kw):
-    _orig_calculate(*a, **kw)
-    _post_calculate_ext()
 
-# Build domain chips on load
+# ─── Patch calculate() to run ext UI after original logic ───────────────────
+
+_orig_calculate_base = calculate
+
+def calculate(event=None):
+    """Extended calculate with INR, batch, cloud markup support."""
+    global comparison_rows
+    # Apply batch multiplier to pricing BEFORE calculating
+    batch = _get_toggle("batch-toggle")
+
+    # Run original calculate
+    _orig_calculate_base(event)
+
+    # Apply batch 50% discount visually on results
+    if batch and comparison_rows:
+        try:
+            result_rows = document.querySelectorAll("#results tr")
+            new_rows = []
+            for i, row in enumerate(result_rows):
+                if i >= len(comparison_rows):
+                    break
+                key, name, daily, monthly, annual = comparison_rows[i]
+                cells = row.querySelectorAll("td")
+                if cells.length >= 4:
+                    half_d = daily * 0.5
+                    half_m = monthly * 0.5
+                    half_a = annual * 0.5
+                    cells[1].textContent = f"${float(half_d):,.2f}"
+                    cells[2].textContent = f"${float(half_m):,.2f}"
+                    cells[3].textContent = f"${float(half_a):,.2f}"
+                    new_rows.append((key, name, half_d, half_m, half_a))
+            if new_rows:
+                comparison_rows = new_rows
+                # Re-render overview with halved values
+                render_cost_overview(comparison_rows)
+        except Exception:
+            pass
+
+    # Apply extension UI
+    if comparison_rows:
+        _apply_ext_ui(comparison_rows)
+
+
+# Build domain chips once on load
 try:
     _build_domain_chips()
 except Exception:
