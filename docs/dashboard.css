@@ -346,7 +346,7 @@ h3 {
   gap:12px;
   margin-bottom:16px;
 }
-input[type="search"], input[type="text"], input[type="number"], select {
+input[type="search"], input[type="text"], input[type="number"], input:not([type]), select {
   width:100%;
   padding:9px 12px;
   font-size:.88rem;
