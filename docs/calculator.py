@@ -334,9 +334,9 @@ def render_full():
         tag.textContent = row["category"]
         cell(tr, "").appendChild(tag)
         acc_tag = document.createElement("span")
-        acc_tag.className = "tag"
-        acc_tag.style.background = "rgba(80,54,239,0.18)"
-        acc_tag.style.borderColor = "var(--accent)"
+        acc_tag.className = "acc-badge"
+        
+        
         acc_tag.textContent = row.get("accuracy") or "Standard Benchmark Tier"
         cell(tr, "").appendChild(acc_tag)
         cell(tr, money(model.input_rate))
