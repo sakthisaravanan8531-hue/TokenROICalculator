@@ -69,15 +69,21 @@ th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line)} th{
 <div id="panel-full" hidden>
 <section>
 <div class="filters"><input id="full-query" type="search" aria-label="Search catalog" placeholder="Search by model, provider, ID, or use case…" py-input="filter_full">
-<select id="category" aria-label="Category" py-change="filter_full"></select>
+<select id="category" aria-label="Domain &amp; Field" py-change="filter_full"></select>
 <select id="provider" aria-label="Provider" py-change="filter_full"></select>
 </div>
 <small>Rates come from the workbook snapshot and documented additions. The token estimate assumes 2,000 input and 500 output tokens per request. Other billing units are shown as published.</small>
 </section>
 <section><div class="scroll"><table><thead><tr>
-<th><button id="sort-name" type="button" py-click="sort_full">Model Name ↕</button></th><th>Provider</th><th>Category</th>
-<th><button id="sort-inputPrice" type="button" py-click="sort_full">Input / 1M ↕</button></th><th><button id="sort-outputPrice" type="button" py-click="sort_full">Output / 1M ↕</button></th>
-<th>Cost per 1,000 requests / other billing</th><th>Compare</th><th>Details</th>
+<th><button id="sort-name" type="button" py-click="sort_full">Model Name ↕</button></th>
+<th>Provider</th>
+<th><button id="sort-category" type="button" py-click="sort_full">Domain &amp; Field ↕</button></th>
+<th><button id="sort-accuracy" type="button" py-click="sort_full">Accuracy &amp; Benchmark Tier ↕</button></th>
+<th><button id="sort-inputPrice" type="button" py-click="sort_full">Input / 1M ↕</button></th>
+<th><button id="sort-outputPrice" type="button" py-click="sort_full">Output / 1M ↕</button></th>
+<th>Billing Unit / Workload Cost</th>
+<th>Compare</th>
+<th>Details</th>
 </tr></thead><tbody id="catalog-rows" py-click="catalog_action"></tbody></table></div>
 <div class="pager"><span id="page-label"></span><div class="actions"><button type="button" id="previous" py-click="change_page">Previous</button><button type="button" id="next" py-click="change_page">Next</button></div></div></section>
 </div>
@@ -459,7 +465,7 @@ th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line)} th{
 <button type="button" id="leader-price" aria-pressed="true" py-click="switch_leader_mode">Best price</button>
 <button type="button" id="leader-fit" aria-pressed="false" py-click="switch_leader_mode">Best for the job</button>
 </div>
-<label>Category<select id="leader-category" py-change="render_leaders"></select></label>
+<label>Domain &amp; Field<select id="leader-category" py-change="render_leaders"></select></label>
 </div>
 <div id="leader-price-panel">
 <p>Selected comparison models ranked by estimated monthly cost for your workload.</p>
@@ -521,7 +527,8 @@ th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line)} th{
 <section id="detail-card" aria-labelledby="detail-title">
 <h2 id="detail-title" tabindex="-1"></h2><p id="detail-id"></p>
 <div class="split">
-<div><h3>Use cases</h3><p id="detail-use"></p><p id="detail-fit" hidden></p></div>
+<div><h3>Accuracy &amp; Benchmark Tier</h3><p id="detail-accuracy" style="font-weight:600;color:var(--ink)"></p></div>
+<div><h3>Use cases &amp; Strengths</h3><p id="detail-use"></p><p id="detail-fit" hidden></p></div>
 <div><h3>Best-fit domains</h3><p id="detail-domain"></p></div>
 <div><h3>Current application usage</h3><p id="detail-usage"></p><a id="detail-usage-source" target="_blank" rel="noopener noreferrer" hidden>View application documentation</a></div>
 <div id="detail-parameters-group" hidden><h3>Parameters and capabilities</h3><p id="detail-parameters"></p></div>
@@ -532,6 +539,6 @@ th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line)} th{
 </div>
 </fieldset>
 </main>
-<script type="py" src="./calculator.py?v=20261117"></script>
+<script type="py" src="./calculator.py?v=20261117c"></script>
 </body>
 </html>
