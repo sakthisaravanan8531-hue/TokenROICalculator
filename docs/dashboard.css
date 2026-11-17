@@ -202,14 +202,14 @@ header p {
 }
 
 /* ── Loading ── */
-#loading {
+#loading:not([hidden]) {
   display:block;
   text-align:center;
   padding:60px 20px;
   color: var(--muted);
   font-size:.95rem;
 }
-#loading::before {
+#loading:not([hidden])::before {
   content:'';
   display:block;
   width:40px;
