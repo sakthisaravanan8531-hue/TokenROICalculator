@@ -15,7 +15,7 @@
 <body>
 <main>
 <header><span class="brand" aria-hidden="true">✦</span><div><h1>AI Model Catalog &amp; Token ROI Calculator</h1><p>Enterprise AI model intelligence, token pricing &amp; multi-model workload ROI calculator. <span class="header-badge">● 2026 Live · 789 Models · 24 Domains</span></p></div>
-<div class="header-actions" id="header-actions" hidden><button type="button" py-click="toggle_theme" aria-label="Toggle color theme">🌓 Theme</button><a id="export-report" class="action primary" download="token-roi-comparison.csv">Download report</a></div></header>
+<div class="header-actions" id="header-actions" hidden><button type="button" py-click="toggle_theme" aria-label="Toggle color theme">🌓 Theme</button><button type="button" id="share-btn" onclick="(function(){var u=window.location.href;navigator.clipboard.writeText(u).then(function(){var b=document.getElementById('share-btn');b.textContent='✓ Copied!';setTimeout(function(){b.textContent='🔗 Share';},2000);});})()">🔗 Share</button><a id="export-report" class="action primary" download="token-roi-comparison.csv">📊 Export CSV</a><a id="export-excel" class="action" download="token-roi-report.csv" hidden>⬇ Excel CSV</a></div></header>
 <p id="loading" role="status">Loading calculator…</p>
 <fieldset id="app" disabled hidden style="border:0;padding:0;margin:0;min-width:0">
 <nav aria-label="Calculator sections">
@@ -26,10 +26,11 @@
 </nav>
 <div id="panel-full" hidden>
 <section>
-<div class="filters"><input id="full-query" type="search" aria-label="Search catalog" placeholder="Search by model, provider, ID, or use case…" py-input="filter_full">
+<div class="filters"><input id="full-query" type="search" aria-label="Search catalog" placeholder="Search by model, provider, ID, domain, or use case…" py-input="filter_full">
 <select id="category" aria-label="Domain &amp; Field" py-change="filter_full"></select>
 <select id="provider" aria-label="Provider" py-change="filter_full"></select>
 </div>
+<div id="domain-chips" class="chip-strip"></div>
 <small>Rates come from the workbook snapshot and documented additions. The token estimate assumes 2,000 input and 500 output tokens per request. Other billing units are shown as published.</small>
 </section>
 <section><div class="scroll"><table><thead><tr>
@@ -388,7 +389,13 @@
 <label>Input tokens per request<input id="prompt" type="number" min="0" step="1" value="2000"></label>
 <label>Output tokens per request<input id="completion" type="number" min="0" step="1" value="500"></label>
 <label>Days per month<input id="days" type="number" min="1" max="31" step="1" value="30"></label>
-</div><small>Estimates use base token rates in USD and 365 days per year.</small></section>
+</div>
+<div class="toggle-row">
+<label><input type="checkbox" id="batch-toggle" py-change="calculate"> Batch pricing <span class="batch-badge">50% OFF</span></label>
+<label><input type="checkbox" id="inr-toggle" py-change="calculate"> Show INR <span class="inr-badge-pill">₹1 = $0.012</span></label>
+<label><input type="checkbox" id="cloud-toggle" py-change="calculate"> Cloud provider markup</label>
+</div>
+<small>Estimates use base token rates in USD. Batch pricing applies 50% discount. INR rate: ₹84.5/USD. Cloud markup: AWS +15%, Azure +18%, GCP +12%.</small></section>
 <section aria-labelledby="comparison-title"><h2 id="comparison-title">Cost comparison</h2>
 <div class="grid">
 <label>Add a model<select id="comparison-model" py-change="add_comparison_model"></select></label>
@@ -410,11 +417,17 @@
 <dl class="metrics">
 <div class="metric"><dt>Selected models</dt><dd id="metric-count"></dd></div>
 <div class="metric"><dt>Lowest monthly cost</dt><dd id="metric-lowest"></dd><small id="metric-lowest-name"></small></div>
+<div class="metric" id="inr-metric" hidden><dt>Lowest cost (INR)</dt><dd id="metric-lowest-inr"></dd><small>at ₹84.5/USD</small></div>
+<div class="metric" id="batch-metric" hidden><dt>Batch savings /mo</dt><dd id="metric-batch-save"></dd><small>50% discount applied</small></div>
 </dl>
-<div class="cost-chart"><h3 id="cost-chart-title">Monthly cost by model</h3><ul id="cost-chart-rows" class="chart-list" aria-labelledby="cost-chart-title"></ul></div>
+<div class="cost-chart"><h3 id="cost-chart-title">Monthly cost by model (USD)</h3><ul id="cost-chart-rows" class="chart-list" aria-labelledby="cost-chart-title"></ul></div>
+<div class="cloud-breakdown" id="cloud-breakdown-panel" hidden>
+<h3>☁ Cloud Provider Markup Estimates</h3>
+<div id="cloud-breakdown-rows"></div>
+</div>
 </div>
 <p id="cost-empty" hidden>Select one or more models and enter a valid workload to see costs.</p>
-<div class="scroll"><table class="results-table" aria-label="Model cost comparison results"><thead><tr><th>Model</th><th>USD / day</th><th>USD / month</th><th>USD / year</th><th scope="col">Actions</th></tr></thead><tbody id="results" py-click="remove_model"></tbody></table></div>
+<div class="scroll"><table class="results-table" aria-label="Model cost comparison results"><thead><tr><th>Model</th><th>USD / day</th><th>USD / month</th><th id="inr-col-head" hidden>INR / month</th><th>USD / year</th><th id="cloud-col-head" hidden>AWS / Azure / GCP /mo</th><th scope="col">Actions</th></tr></thead><tbody id="results" py-click="remove_model"></tbody></table></div>
 </section>
 <section aria-labelledby="leader-title">
 <h2 id="leader-title">Domain Leaders</h2>
@@ -497,6 +510,6 @@
 </div>
 </fieldset>
 </main>
-<script type="py" src="./calculator.py?v=20261117d"></script>
+<script type="py" src="./calculator.py?v=20261117g"></script>
 </body>
 </html>
