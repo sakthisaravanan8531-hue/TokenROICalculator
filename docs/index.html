@@ -7,64 +7,22 @@
 <title>AI Model Catalog &amp; Token ROI Calculator</title>
 <script type="module" src="https://pyscript.net/releases/2025.11.1/core.js"></script>
 <style>
-:root{color-scheme:dark;--bg:#050918;--panel:#11182a;--field:#1b2639;--line:#23304a;--ink:#f5f7ff;--muted:#a0b6d1;--accent:#5036ef;--link:#a99cff;font:14px/1.5 system-ui,sans-serif}
-:root[data-theme=light]{color-scheme:light;--bg:#f3f5fb;--panel:#fff;--field:#eff2f9;--line:#d1dbec;--ink:#162037;--muted:#465a78;--link:#4330c5}
-*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink)} main{max-width:1280px;margin:auto;padding:28px 24px 54px}
-header{display:flex;align-items:center;gap:12px;padding-bottom:24px;border-bottom:1px solid var(--line)} .brand{display:grid;place-items:center;background:var(--accent);color:white;border-radius:16px;width:48px;height:48px;flex:none;font-size:24px}
-h1{font-size:clamp(1.3rem,3vw,1.9rem);line-height:1.18;margin:0 0 3px;font-weight:800} h2{font-size:1.08rem;margin:0 0 12px} p{margin:0 0 8px;color:var(--muted)}
-header p{margin:0;font-size:.93rem}.header-actions{margin-left:auto;display:flex;gap:10px;flex:none}
-nav{display:flex;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--line);padding:24px 0 8px;margin-bottom:24px}
-section{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:22px}
-.leader-modes{margin-bottom:12px}.leader-modes button[aria-pressed=true]{background:var(--accent);color:#fff;border-color:var(--accent)}.job-table td{white-space:normal;min-width:130px;vertical-align:top}.job-table td:nth-child(3),.job-table td:nth-child(4){min-width:220px}
-.resource-list{margin:0;padding-left:1.2em}.resource-list li+li{margin-top:6px}
-#detail-card h3{font-size:.95rem;margin:10px 0 5px} #detail-id{overflow-wrap:anywhere}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}.split{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,310px),1fr));gap:14px}
-.filters{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(140px,1fr);gap:12px;align-items:center}.filters input,.filters select{margin:0}
-@media(max-width:850px){.filters{grid-template-columns:repeat(2,minmax(0,1fr))}.filters #full-query{grid-column:1/-1}}
-.filters + small{display:block;margin-top:14px}
-label{display:block;font-size:.86rem;color:var(--muted)} input,select,button,a.action{font:inherit}
-input,select{width:100%;padding:.58rem .7rem;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:10px;margin:4px 0 8px}
-button,a.action{display:inline-block;border:1px solid var(--line);border-radius:11px;padding:.62rem .9rem;background:var(--panel);color:var(--muted);font-weight:650;text-decoration:none;cursor:pointer}
-button.primary,a.primary,nav button[aria-pressed=true]{background:var(--accent);color:#fff;border-color:var(--accent)} button:disabled{opacity:.6;cursor:default} button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #9b8cff;outline-offset:2px}
-.actions,.pager{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.pager{justify-content:space-between;margin-top:12px}.status{margin:8px 0 0;min-height:1.5em}
-table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;white-space:nowrap;font-size:.86rem}
-.results-table :is(th,td):not(:first-child){text-align:right}.results-table tbody tr:nth-child(odd){background:var(--field)}.results-table th{background:var(--field)}
-th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line)} th{color:var(--muted);font-weight:650} th button,td .link{padding:0;background:none;border:0;font-size:inherit} td .link,a{color:var(--link)}
-#catalog-rows td:first-child{font-weight:700}.tag{padding:3px 7px;background:var(--field);color:var(--muted);border-radius:5px;font-size:.78rem}.new{margin-left:7px;color:#ffb84a}
-.scroll{overflow-x:auto} small{color:var(--muted)} [hidden]{display:none!important}
-@media(max-width:650px){main{padding:18px 12px}header{flex-wrap:wrap}.header-actions{margin-left:0}.filters{grid-template-columns:1fr}section{padding:14px}}
-#leader-price-table{max-height:28rem;overflow:auto}#leader-price-table thead{position:sticky;top:0;background:var(--panel)}
-.comparison-option{border-top:1px solid var(--line);padding-top:12px;margin-top:16px}
-.comparison-option summary{cursor:pointer;font-weight:650;margin-bottom:10px}
-.comparison-option summary:focus-visible{outline:2px solid #9b8cff;outline-offset:3px}
-.advisor-search{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end}.advisor-search input{margin-bottom:0}
-.advisor-question{border:0;border-top:1px solid var(--line);padding:14px 0 0;margin:16px 0 0;min-width:0}
-.advisor-result{background:var(--field);border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:10px;overflow-wrap:anywhere}
-.advisor-result h4{margin:0 0 5px}.advisor-result p{margin-bottom:6px}
-@media(max-width:480px){.advisor-search{grid-template-columns:1fr}.advisor-search button{justify-self:start}}
-.catalog-price{white-space:normal;min-width:150px;max-width:260px}
-.frontier-section{margin-top:16px;border:1px solid var(--line);border-radius:10px;padding:12px}
-.frontier-section summary{cursor:pointer;font-weight:700}
-.frontier-section .scroll{margin-top:12px}
-.frontier-section p{margin:12px 0 0}
-.frontier-section table{white-space:normal}
-.frontier-section th,.frontier-section td{min-width:115px;max-width:310px;vertical-align:top}
-.frontier-section td:first-child{font-weight:650}
-#frontier-query{max-width:580px}
+/* Synchronized with dashboard.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 </style>
 <link rel="stylesheet" href="./dashboard.css">
 </head>
 <body>
 <main>
-<header><span class="brand" aria-hidden="true">ROI</span><div><h1>AI Model Catalog &amp; Token ROI Calculator</h1><p>Compare AI model pricing and estimate workload costs. Catalog snapshot: 11 November 2026.</p></div>
-<div class="header-actions" id="header-actions" hidden><button type="button" py-click="toggle_theme" aria-label="Toggle color theme">☀</button><a id="export-report" class="action primary" download="token-roi-comparison.csv">Download report</a></div></header>
+<header><span class="brand" aria-hidden="true">✦</span><div><h1>AI Model Catalog &amp; Token ROI Calculator</h1><p>Enterprise AI model intelligence, token pricing &amp; multi-model workload ROI calculator. <span class="header-badge">● 2026 Live · 789 Models · 24 Domains</span></p></div>
+<div class="header-actions" id="header-actions" hidden><button type="button" py-click="toggle_theme" aria-label="Toggle color theme">🌓 Theme</button><a id="export-report" class="action primary" download="token-roi-comparison.csv">Download report</a></div></header>
 <p id="loading" role="status">Loading calculator…</p>
 <fieldset id="app" disabled hidden style="border:0;padding:0;margin:0;min-width:0">
 <nav aria-label="Calculator sections">
 <button type="button" id="tab-full" aria-pressed="false" py-click="show_panel">▦ &nbsp;Full Catalog (<span id="catalog-total"></span> Entries)</button>
 <button type="button" id="tab-roi" aria-pressed="true" py-click="show_panel">▤ &nbsp;Token ROI Calculator</button>
 <button type="button" id="tab-details" aria-pressed="false" py-click="show_panel">▱ &nbsp;Model Details</button>
-<button type="button" id="tab-frontier" aria-pressed="false" py-click="show_panel">Frontier models</button>
+<button type="button" id="tab-frontier" aria-pressed="false" py-click="show_panel">⚡ &nbsp;Frontier &amp; Domain Benchmarks</button>
 </nav>
 <div id="panel-full" hidden>
 <section>
@@ -539,6 +497,6 @@ th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line)} th{
 </div>
 </fieldset>
 </main>
-<script type="py" src="./calculator.py?v=20261117c"></script>
+<script type="py" src="./calculator.py?v=20261117d"></script>
 </body>
 </html>
