@@ -1,0 +1,175 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Token ROI Calculator — API + DynamoDB + Gemini AI Advisor + Daily Refresher
+
+Globals:
+  Function:
+    Runtime: python3.12
+    Timeout: 30
+    MemorySize: 256
+    Environment:
+      Variables:
+        TABLE_NAME: !Ref ModelCatalogTable
+        CORS_ORIGIN: "*"
+  Api:
+    Cors:
+      AllowOrigin: "'*'"
+      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
+      AllowMethods: "'GET,POST,OPTIONS'"
+
+Parameters:
+  Stage:
+    Type: String
+    Default: prod
+    AllowedValues: [dev, prod]
+
+Resources:
+  # ── DynamoDB Table ──────────────────────────────────────────────────────────
+  ModelCatalogTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "AIModelCatalog-${Stage}"
+      BillingMode: PAY_PER_REQUEST
+      TableClass: STANDARD
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      AttributeDefinitions:
+        - AttributeName: modelId
+          AttributeType: S
+        - AttributeName: category
+          AttributeType: S
+        - AttributeName: provider
+          AttributeType: S
+        - AttributeName: inputPrice
+          AttributeType: "N"
+      KeySchema:
+        - AttributeName: modelId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: category-price-index
+          KeySchema:
+            - AttributeName: category
+              KeyType: HASH
+            - AttributeName: inputPrice
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: provider-index
+          KeySchema:
+            - AttributeName: provider
+              KeyType: HASH
+            - AttributeName: inputPrice
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      Tags:
+        - Key: Project
+          Value: TokenROICalculator
+
+  # ── API Gateway ─────────────────────────────────────────────────────────────
+  TokenROIApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref Stage
+      Description: Token ROI Calculator REST API
+      TracingEnabled: true
+      Tags:
+        Project: TokenROICalculator
+
+  # ── Lambda: Catalog Query ───────────────────────────────────────────────────
+  CatalogFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "token-roi-catalog-${Stage}"
+      CodeUri: functions/catalog/
+      Handler: index.handler
+      Description: "Query AI model catalog from DynamoDB"
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ModelCatalogTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:Query
+                - dynamodb:Scan
+                - dynamodb:GetItem
+              Resource:
+                - !GetAtt ModelCatalogTable.Arn
+                - !Sub "${ModelCatalogTable.Arn}/index/*"
+      Events:
+        ListModels:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TokenROIApi
+            Path: /models
+            Method: GET
+        GetModel:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TokenROIApi
+            Path: /models/{modelId}
+            Method: GET
+
+  # ── Lambda: Gemini AI Advisor ───────────────────────────────────────────────
+  GeminiAdvisorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "token-roi-gemini-advisor-${Stage}"
+      CodeUri: functions/bedrock-advisor/
+      Handler: index.handler
+      Timeout: 45
+      MemorySize: 256
+      Description: "AI-powered model advisor using Google Gemini API"
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ModelCatalogTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/token-roi/${Stage}/*"
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ModelCatalogTable
+          GEMINI_KEY_PARAM: !Sub "/token-roi/${Stage}/gemini-api-key"
+          GEMINI_MODEL: "gemini-3.1-flash-lite"
+      Events:
+        Advise:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TokenROIApi
+            Path: /advisor
+            Method: POST
+
+  # ── Lambda: Daily Catalog Refresher (EventBridge Cron) ──────────────────────
+  DailyRefresherFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "token-roi-daily-refresher-${Stage}"
+      CodeUri: functions/refresher/
+      Handler: index.handler
+      Timeout: 120
+      MemorySize: 256
+      Description: "Daily automated refresh for AI model details and pricing"
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ModelCatalogTable
+      Events:
+        DailyCron:
+          Type: Schedule
+          Properties:
+            Schedule: "cron(0 0 * * ? *)"
+            Description: "Runs daily at 00:00 UTC to refresh model catalog"
+            Enabled: true
+
+Outputs:
+  ApiUrl:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${TokenROIApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}"
+    Export:
+      Name: !Sub "TokenROIApi-${Stage}-Url"
+  TableName:
+    Description: "DynamoDB table name"
+    Value: !Ref ModelCatalogTable
+    Export:
+      Name: !Sub "TokenROITable-${Stage}"
