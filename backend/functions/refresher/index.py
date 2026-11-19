@@ -16,7 +16,7 @@ table = dynamodb.Table(TABLE_NAME)
 
 SOURCE_URL = os.environ.get(
     "CATALOG_SOURCE_URL",
-    "https://raw.githubusercontent.com/sakthisaravanan8531-hue/TokenROICalculator/main/docs/calculator.py"
+    "https://raw.githubusercontent.com/sakthisaravanan8531-hue/TokenROICalculator/e296e558ca85063687b1b093ead696a8dee96a98/docs/calculator.py"
 )
 
 def handler(event, context):
