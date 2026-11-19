@@ -53,24 +53,24 @@ Choosing the right foundation model requires balancing benchmark capability, lat
 
 ```mermaid
 flowchart TD
-    User([End User / Engineer / CFO]) -->|HTTPS| Amplify[AWS Amplify Hosting\nSPA React 18 + Vite]
-    Amplify -->|REST API| APIGW[Amazon API Gateway\nHTTP REST API /prod]
+    User(["End User / Engineer / CFO"]) -->|"HTTPS"| Amplify["AWS Amplify Hosting<br>SPA React 18 + Vite"]
+    Amplify -->|"REST API"| APIGW["Amazon API Gateway<br>HTTP REST API /prod"]
     
-    subgraph AWS ap-south-1 Mumbai
-        APIGW -->|/catalog & /catalog/{id}| LambdaCatalog[Catalog Lambda\nDynamoDB Scan & Filter]
-        APIGW -->|/advisor| LambdaAdvisor[Gemini Advisor Lambda\nMulti-Model Resilience Pool]
+    subgraph AWS ["AWS ap-south-1 Mumbai"]
+        APIGW -->|"/catalog and /catalog/:id"| LambdaCatalog["Catalog Lambda<br>DynamoDB Scan and Filter"]
+        APIGW -->|"/advisor"| LambdaAdvisor["Gemini Advisor Lambda<br>Multi-Model Resilience Pool"]
         
-        LambdaCatalog <--> DDB[(Amazon DynamoDB\nAIModelCatalog-prod\n828+ Models)]
+        LambdaCatalog <--> DDB[("Amazon DynamoDB<br>AIModelCatalog-prod<br>828+ Models")]
         LambdaAdvisor <--> DDB
         
-        EventBridge[EventBridge Daily Rule\ncron 0 2 * * ? *] -->|Triggers Daily| LambdaRefresher[Daily Refresher Lambda]
-        LambdaRefresher -->|Fetches Latest Rates| Remote[GitHub / Upstream Sources]
-        LambdaRefresher -->|Upserts Catalog| DDB
+        EventBridge["EventBridge Daily Rule<br>cron(0 2 * * ? *)"] -->|"Triggers Daily"| LambdaRefresher["Daily Refresher Lambda"]
+        LambdaRefresher -->|"Fetches Latest Rates"| Remote["GitHub / Upstream Sources"]
+        LambdaRefresher -->|"Upserts Catalog"| DDB
         
-        SSM[AWS SSM Parameter Store\n/token-roi/prod/gemini-api-key] -.->|Secure API Key| LambdaAdvisor
+        SSM["AWS SSM Parameter Store<br>/token-roi/prod/gemini-api-key"] -.->|"Secure API Key"| LambdaAdvisor
     end
     
-    LambdaAdvisor -->|Fallback Cascade Pool| Gemini[Google Gemini AI Engine\n3.1-flash-lite / 3.5-flash-lite / 3.5-flash]
+    LambdaAdvisor -->|"Fallback Cascade Pool"| Gemini["Google Gemini AI Engine<br>3.1-flash-lite / 3.5-flash-lite / 3.5-flash"]
 ```
 
 ### Flow
